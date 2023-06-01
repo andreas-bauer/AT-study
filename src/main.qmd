@@ -1,0 +1,99 @@
+---
+title: "AT Study"
+execute:
+  echo: true
+  warning: false
+---
+
+## Introduction
+
+TBA
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Import data
+
+```{r}
+suppressPackageStartupMessages(library(caret))
+```
+
+
+```{r}
+dfRaw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ';')
+head(dfRaw)
+
+df <- subset(dfRaw, select = c(TC1_seconds,TC2_seconds, TC3_seconds, TC4_seconds, TC5_seconds, TC6_seconds, TC7_seconds, TC8_seconds))
+
+dfTreatment <- subset(dfRaw, select = c(TC1_treatment,TC2_treatment, TC3_treatment, TC4_treatment, TC5_treatment, TC6_treatment, TC7_treatment, TC8_treatment))
+
+dfM <- data.frame(
+  TC1_seconds = mean(dfRaw$TC1_seconds[dfRaw$TC1_treatment == 'M']),
+  TC2_seconds = mean(dfRaw$TC2_seconds[dfRaw$TC2_treatment == 'M']),
+  TC3_seconds = mean(dfRaw$TC3_seconds[dfRaw$TC3_treatment == 'M']),
+  TC4_seconds = mean(dfRaw$TC4_seconds[dfRaw$TC4_treatment == 'M']),
+  TC5_seconds = mean(dfRaw$TC5_seconds[dfRaw$TC5_treatment == 'M']),
+  TC6_seconds = mean(dfRaw$TC6_seconds[dfRaw$TC6_treatment == 'M']),
+  TC7_seconds = mean(dfRaw$TC7_seconds[dfRaw$TC7_treatment == 'M']),
+  TC8_seconds = mean(dfRaw$TC8_seconds[dfRaw$TC8_treatment == 'M'])
+)
+
+dfA <- data.frame(
+  TC1_seconds = mean(dfRaw$TC1_seconds[dfRaw$TC1_treatment == 'A']),
+  TC2_seconds = mean(dfRaw$TC2_seconds[dfRaw$TC2_treatment == 'A']),
+  TC3_seconds = mean(dfRaw$TC3_seconds[dfRaw$TC3_treatment == 'A']),
+  TC4_seconds = mean(dfRaw$TC4_seconds[dfRaw$TC4_treatment == 'A']),
+  TC5_seconds = mean(dfRaw$TC5_seconds[dfRaw$TC5_treatment == 'A']),
+  TC6_seconds = mean(dfRaw$TC6_seconds[dfRaw$TC6_treatment == 'A']),
+  TC7_seconds = mean(dfRaw$TC7_seconds[dfRaw$TC7_treatment == 'A']),
+  TC8_seconds = mean(dfRaw$TC8_seconds[dfRaw$TC8_treatment == 'A'])
+)
+
+dfMean <- data.frame(
+  TC1_seconds = mean(dfRaw$TC1_seconds),
+  TC2_seconds = mean(dfRaw$TC2_seconds),
+  TC3_seconds = mean(dfRaw$TC3_seconds),
+  TC4_seconds = mean(dfRaw$TC4_seconds),
+  TC5_seconds = mean(dfRaw$TC5_seconds),
+  TC6_seconds = mean(dfRaw$TC6_seconds),
+  TC7_seconds = mean(dfRaw$TC7_seconds),
+  TC8_seconds = mean(dfRaw$TC8_seconds)
+)
+
+```
+
+```{r}
+
+preProc <- preProcess(df, method=c('range'), rangeBounds=c(-1,1))
+dfNorm <- predict(preProc, df)
+
+dfMNorm <- predict(preProc, dfM)
+dfANorm <- predict(preProc, dfA)
+dfMeanNorm <- predict(preProc, dfMean)
+```
+
+Not normalized
+
+```{r}
+x = 1:8
+xLabels = c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
+
+plot(x, dfMean, type ='o', col = 1, xaxt = "n", ylim = c(0, 250), xlab="Test case", ylab="duration in seconds")
+lines(x, dfM, type ='o', col = 'red')
+lines(x, dfA, type ='o', col = 'green')
+axis(1, at = 1:8, labels = xLabels)
+legend(1, 240, legend=c("Mean", "Mean M", "Mean A"),
+       col=c("black", "red", "green"), lty=1, cex=0.8)
+```
+
+
+Normalized
+```{r}
+plot(x, dfMeanNorm, type ='o', col = 1, xaxt = "n", ylim = c(-1, 1), xlab="Test case", ylab="duration normalized")
+lines(x, dfMNorm, type ='o', col = 2)
+lines(x, dfANorm, type ='o', col = 3)
+axis(1, at = 1:8, labels = xLabels)
+legend(1, 1, legend=c("Mean", "Mean M", "Mean A"),
+       col=c("black", "red", "green"), lty=1, cex=0.8)
+```

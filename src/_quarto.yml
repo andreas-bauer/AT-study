@@ -1,0 +1,4 @@
+project:
+  title: "AT Study"
+  type: website
+  output-dir: ../docs
