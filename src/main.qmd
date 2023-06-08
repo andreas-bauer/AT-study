@@ -13,20 +13,22 @@ TBA
 
 Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
 
-## Import data
+## Import and clean-up data
 
 ```{r}
 suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(dplyr))
 ```
-
 
 ```{r}
 dfRaw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ';')
 head(dfRaw)
 
-df <- subset(dfRaw, select = c(TC1_seconds,TC2_seconds, TC3_seconds, TC4_seconds, TC5_seconds, TC6_seconds, TC7_seconds, TC8_seconds))
+df <- dfRaw %>% mutate(
+  TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds + TC6_seconds + TC7_seconds + TC8_seconds,
+  TC_sum_user_done = TC1_seconds_user_done + TC2_seconds_user_done + TC3_seconds_user_done + TC4_seconds_user_done + TC5_seconds_user_done + TC6_seconds_user_done + TC7_seconds_user_done + TC8_seconds_user_done,
+  Online_session = as.logical(Online_session))
 
-dfTreatment <- subset(dfRaw, select = c(TC1_treatment,TC2_treatment, TC3_treatment, TC4_treatment, TC5_treatment, TC6_treatment, TC7_treatment, TC8_treatment))
 
 dfM <- data.frame(
   TC1_seconds = mean(dfRaw$TC1_seconds[dfRaw$TC1_treatment == 'M']),
@@ -62,6 +64,25 @@ dfMean <- data.frame(
 )
 
 ```
+## Plot total test execution time per subject
+
+```{r}
+data <- data.frame(
+  subject_id= 1:5,
+  seconds=df$TC_sum
+)
+
+# Uniform color
+time_sum_bar <- barplot(height=df$TC_sum, names=1:5, 
+        col="#69b3a2",
+        horiz=T, las=1,
+        xlim=c(0, 1000),
+        xlab="Sum of test case duration per participant",
+        ylab="Paticipant ID"
+        )
+text(time_sum_bar, x=data$seconds-80 , paste(data$seconds, "sec", sep=" ") ,cex=1) 
+```
+
 
 ```{r}
 
