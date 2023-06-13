@@ -18,11 +18,15 @@ Quarto enables you to weave together content and executable code into a finished
 ```{r}
 suppressPackageStartupMessages(library(caret))
 suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(vioplot))
 ```
 
 ```{r}
 dfRaw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ';')
 head(dfRaw)
+
+tcColumns <- c('TC1_seconds_user_done', 'TC2_seconds_user_done', 'TC3_seconds_user_done', 'TC4_seconds_user_done', 'TC5_seconds_user_done', 'TC6_seconds_user_done', 'TC7_seconds_user_done', 'TC8_seconds_user_done')
+tcNames <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
 
 df <- dfRaw %>% mutate(
   TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds + TC6_seconds + TC7_seconds + TC8_seconds,
@@ -62,26 +66,77 @@ dfMean <- data.frame(
   TC7_seconds = mean(dfRaw$TC7_seconds),
   TC8_seconds = mean(dfRaw$TC8_seconds)
 )
-
 ```
+## Seperate two treatments
+```{r}
+tc1M <- df %>% filter(TC1_treatment == 'M') %>% select(tcColumns[1]) %>% pull(tcColumns[1])
+tc1A <- df %>% filter(TC1_treatment == 'A') %>% select(tcColumns[1]) %>% pull(tcColumns[1])
+
+tc2M <- df %>% filter(TC2_treatment == 'M') %>% select(tcColumns[2]) %>% pull(tcColumns[2])
+tc2A <- df %>% filter(TC2_treatment == 'A') %>% select(tcColumns[2]) %>% pull(tcColumns[2])
+
+tc3M <- df %>% filter(TC3_treatment == 'M') %>% select(tcColumns[3]) %>% pull(tcColumns[3])
+tc3A <- df %>% filter(TC3_treatment == 'A') %>% select(tcColumns[3]) %>% pull(tcColumns[3])
+
+tc4M <- df %>% filter(TC4_treatment == 'M') %>% select(tcColumns[4]) %>% pull(tcColumns[4])
+tc4A <- df %>% filter(TC4_treatment == 'A') %>% select(tcColumns[4]) %>% pull(tcColumns[4])
+
+tc5M <- df %>% filter(TC5_treatment == 'M') %>% select(tcColumns[5]) %>% pull(tcColumns[5])
+tc5A <- df %>% filter(TC5_treatment == 'A') %>% select(tcColumns[5]) %>% pull(tcColumns[5])
+
+tc6M <- df %>% filter(TC6_treatment == 'M') %>% select(tcColumns[6]) %>% pull(tcColumns[6])
+tc6A <- df %>% filter(TC6_treatment == 'A') %>% select(tcColumns[6]) %>% pull(tcColumns[6])
+
+tc7M <- df %>% filter(TC7_treatment == 'M') %>% select(tcColumns[7]) %>% pull(tcColumns[7])
+tc7A <- df %>% filter(TC7_treatment == 'A') %>% select(tcColumns[7]) %>% pull(tcColumns[7])
+
+tc8M <- df %>% filter(TC8_treatment == 'M') %>% select(tcColumns[8]) %>% pull(tcColumns[8])
+tc8A <- df %>% filter(TC8_treatment == 'A') %>% select(tcColumns[8]) %>% pull(tcColumns[8])
+```
+
 ## Plot total test execution time per subject
 
 ```{r}
-data <- data.frame(
-  subject_id= 1:5,
-  seconds=df$TC_sum
-)
-
-# Uniform color
 time_sum_bar <- barplot(height=df$TC_sum, names=1:5, 
         col="#69b3a2",
         horiz=T, las=1,
         xlim=c(0, 1000),
-        xlab="Sum of test case duration per participant",
+        xlab="Sum of test case duration per participant in seconds",
         ylab="Paticipant ID"
         )
-text(time_sum_bar, x=data$seconds-80 , paste(data$seconds, "sec", sep=" ") ,cex=1) 
+text(time_sum_bar, x=df$TC_sum-80 , paste(df$TC_sum, "sec", sep=" ") ,cex=1) 
 ```
+
+## Violin plot per test case
+```{r}
+data <- df %>% select(all_of(tcColumns))
+
+vioplot(data,
+        col="#69b3a2",
+        names=tcNames,
+        ylab="Duration in seconds",
+        xlab="Distribution of duration per test case"
+        )
+```
+## Violin plot per test case with seperation of the treatments
+```{r}
+length(tc1A) <- 3
+length(tc1M) <- 3
+length(tc2M) <- 3
+length(tc2A) <- 3
+data <- data.frame(
+  TC1M = tc1M,
+  TC1A = tc1A,
+  TC2M = tc2M,
+  TC2A = tc2A
+)
+vioplot(data,
+        col="#69b3a2",
+        ylab="Duration in seconds",
+        xlab="Distribution of duration per test case"
+        )
+```
+
 
 
 ```{r}
