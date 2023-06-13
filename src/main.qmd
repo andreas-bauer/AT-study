@@ -33,39 +33,6 @@ df <- dfRaw %>% mutate(
   TC_sum_user_done = TC1_seconds_user_done + TC2_seconds_user_done + TC3_seconds_user_done + TC4_seconds_user_done + TC5_seconds_user_done + TC6_seconds_user_done + TC7_seconds_user_done + TC8_seconds_user_done,
   Online_session = as.logical(Online_session))
 
-
-dfM <- data.frame(
-  TC1_seconds = mean(dfRaw$TC1_seconds[dfRaw$TC1_treatment == 'M']),
-  TC2_seconds = mean(dfRaw$TC2_seconds[dfRaw$TC2_treatment == 'M']),
-  TC3_seconds = mean(dfRaw$TC3_seconds[dfRaw$TC3_treatment == 'M']),
-  TC4_seconds = mean(dfRaw$TC4_seconds[dfRaw$TC4_treatment == 'M']),
-  TC5_seconds = mean(dfRaw$TC5_seconds[dfRaw$TC5_treatment == 'M']),
-  TC6_seconds = mean(dfRaw$TC6_seconds[dfRaw$TC6_treatment == 'M']),
-  TC7_seconds = mean(dfRaw$TC7_seconds[dfRaw$TC7_treatment == 'M']),
-  TC8_seconds = mean(dfRaw$TC8_seconds[dfRaw$TC8_treatment == 'M'])
-)
-
-dfA <- data.frame(
-  TC1_seconds = mean(dfRaw$TC1_seconds[dfRaw$TC1_treatment == 'A']),
-  TC2_seconds = mean(dfRaw$TC2_seconds[dfRaw$TC2_treatment == 'A']),
-  TC3_seconds = mean(dfRaw$TC3_seconds[dfRaw$TC3_treatment == 'A']),
-  TC4_seconds = mean(dfRaw$TC4_seconds[dfRaw$TC4_treatment == 'A']),
-  TC5_seconds = mean(dfRaw$TC5_seconds[dfRaw$TC5_treatment == 'A']),
-  TC6_seconds = mean(dfRaw$TC6_seconds[dfRaw$TC6_treatment == 'A']),
-  TC7_seconds = mean(dfRaw$TC7_seconds[dfRaw$TC7_treatment == 'A']),
-  TC8_seconds = mean(dfRaw$TC8_seconds[dfRaw$TC8_treatment == 'A'])
-)
-
-dfMean <- data.frame(
-  TC1_seconds = mean(dfRaw$TC1_seconds),
-  TC2_seconds = mean(dfRaw$TC2_seconds),
-  TC3_seconds = mean(dfRaw$TC3_seconds),
-  TC4_seconds = mean(dfRaw$TC4_seconds),
-  TC5_seconds = mean(dfRaw$TC5_seconds),
-  TC6_seconds = mean(dfRaw$TC6_seconds),
-  TC7_seconds = mean(dfRaw$TC7_seconds),
-  TC8_seconds = mean(dfRaw$TC8_seconds)
-)
 ```
 ## Seperate two treatments
 ```{r}
@@ -92,6 +59,25 @@ tc7A <- df %>% filter(TC7_treatment == 'A') %>% select(tcColumns[7]) %>% pull(tc
 
 tc8M <- df %>% filter(TC8_treatment == 'M') %>% select(tcColumns[8]) %>% pull(tcColumns[8])
 tc8A <- df %>% filter(TC8_treatment == 'A') %>% select(tcColumns[8]) %>% pull(tcColumns[8])
+
+maxLn <- max(c(length(tc1M), length(tc1A)))
+dfSplit <- data.frame(TC1_M = c(tc1M, rep(NA, maxLn - length(tc1M))),
+                      TC1_A = c(tc1A, rep(NA, maxLn - length(tc1A))),
+                      TC2_M = c(tc2M, rep(NA, maxLn - length(tc2M))),
+                      TC2_A = c(tc2A, rep(NA, maxLn - length(tc2A))),
+                      TC3_M = c(tc3M, rep(NA, maxLn - length(tc3M))),
+                      TC3_A = c(tc3A, rep(NA, maxLn - length(tc3A))),
+                      TC4_M = c(tc4M, rep(NA, maxLn - length(tc4M))),
+                      TC4_A = c(tc4A, rep(NA, maxLn - length(tc4A))),
+                      TC5_M = c(tc5M, rep(NA, maxLn - length(tc5M))),
+                      TC5_A = c(tc5A, rep(NA, maxLn - length(tc5A))),
+                      TC6_M = c(tc6M, rep(NA, maxLn - length(tc6M))),
+                      TC6_A = c(tc6A, rep(NA, maxLn - length(tc6A))),
+                      TC7_M = c(tc7M, rep(NA, maxLn - length(tc7M))),
+                      TC7_A = c(tc7A, rep(NA, maxLn - length(tc7A))),
+                      TC8_M = c(tc8M, rep(NA, maxLn - length(tc8M))),
+                      TC8_A = c(tc8A, rep(NA, maxLn - length(tc8A))))
+
 ```
 
 ## Plot total test execution time per subject
@@ -120,56 +106,16 @@ vioplot(data,
 ```
 ## Violin plot per test case with seperation of the treatments
 ```{r}
-length(tc1A) <- 3
-length(tc1M) <- 3
-length(tc2M) <- 3
-length(tc2A) <- 3
-data <- data.frame(
-  TC1M = tc1M,
-  TC1A = tc1A,
-  TC2M = tc2M,
-  TC2A = tc2A
-)
-vioplot(data,
-        col="#69b3a2",
+vioplot(dfSplit,
+        col=c("gray","#69b3a2"),
         ylab="Duration in seconds",
-        xlab="Distribution of duration per test case"
+        xlab="Distribution of duration per test case",
+        cex.names=0.5
         )
+
+steps <- seq(2.5, 14.5 , 2)
+
+abline(v=steps, col="gray")
 ```
 
 
-
-```{r}
-
-preProc <- preProcess(df, method=c('range'), rangeBounds=c(-1,1))
-dfNorm <- predict(preProc, df)
-
-dfMNorm <- predict(preProc, dfM)
-dfANorm <- predict(preProc, dfA)
-dfMeanNorm <- predict(preProc, dfMean)
-```
-
-Not normalized
-
-```{r}
-x = 1:8
-xLabels = c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
-
-plot(x, dfMean, type ='o', col = 1, xaxt = "n", ylim = c(0, 250), xlab="Test case", ylab="duration in seconds")
-lines(x, dfM, type ='o', col = 'red')
-lines(x, dfA, type ='o', col = 'green')
-axis(1, at = 1:8, labels = xLabels)
-legend(1, 240, legend=c("Mean", "Mean M", "Mean A"),
-       col=c("black", "red", "green"), lty=1, cex=0.8)
-```
-
-
-Normalized
-```{r}
-plot(x, dfMeanNorm, type ='o', col = 1, xaxt = "n", ylim = c(-1, 1), xlab="Test case", ylab="duration normalized")
-lines(x, dfMNorm, type ='o', col = 2)
-lines(x, dfANorm, type ='o', col = 3)
-axis(1, at = 1:8, labels = xLabels)
-legend(1, 1, legend=c("Mean", "Mean M", "Mean A"),
-       col=c("black", "red", "green"), lty=1, cex=0.8)
-```
