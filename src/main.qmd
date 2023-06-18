@@ -19,6 +19,7 @@ Quarto enables you to weave together content and executable code into a finished
 suppressPackageStartupMessages(library(caret))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(vioplot))
+suppressPackageStartupMessages(library(tidyverse))
 ```
 
 ```{r}
@@ -117,5 +118,31 @@ steps <- seq(2.5, 14.5 , 2)
 
 abline(v=steps, col="gray")
 ```
+## Mean values per treatment
 
+```{r}
+dfSplitMean <- data.frame(TC1_M = mean(tc1M),
+                      TC1_A = mean(tc1A),
+                      TC2_M = mean(tc2M),
+                      TC2_A = mean(tc2A),
+                      TC3_M = mean(tc3M),
+                      TC3_A = mean(tc3A),
+                      TC4_M = mean(tc4M),
+                      TC4_A = mean(tc4A),
+                      TC5_M = mean(tc5M),
+                      TC5_A = mean(tc5A),
+                      TC6_M = mean(tc6M),
+                      TC6_A = mean(tc6A),
+                      TC7_M = mean(tc7M),
+                      TC7_A = mean(tc7A),
+                      TC8_M = mean(tc8M),
+                      TC8_A = mean(tc8A))
+
+dfSplitMean <- dfSplitMean %>%
+  mutate_if(is.numeric, round, digits = 0) %>% 
+  mutate(
+    M_sum = rowSums(select(., ends_with("_M"))),
+    A_sum = rowSums(select(., ends_with("_A"))))
+
+```
 
