@@ -84,7 +84,7 @@ dfSplit <- data.frame(TC1_M = c(tc1M, rep(NA, maxLn - length(tc1M))),
 ## Plot total test execution time per subject
 
 ```{r}
-time_sum_bar <- barplot(height=df$TC_sum, names=1:5, 
+time_sum_bar <- barplot(height=df$TC_sum, names=df$ID, 
         col="#69b3a2",
         horiz=T, las=1,
         xlim=c(0, 1000),
