@@ -1,0 +1,69 @@
+---
+title: "BDA"
+author: "Julian Frattini, Andreas Bauer"
+output: html_document
+date: "2023-06-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Import
+
+```{r import}
+df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ';')
+
+tc_cols <- c('TC1_seconds_user_done', 'TC2_seconds_user_done', 'TC3_seconds_user_done', 'TC4_seconds_user_done', 'TC5_seconds_user_done', 'TC6_seconds_user_done', 'TC7_seconds_user_done', 'TC8_seconds_user_done')
+tc_names <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
+
+df_new <- dfRaw %>% mutate(
+  TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds + TC6_seconds + TC7_seconds + TC8_seconds,
+  TC_sum_user_done = TC1_seconds_user_done + TC2_seconds_user_done + TC3_seconds_user_done + TC4_seconds_user_done + TC5_seconds_user_done + TC6_seconds_user_done + TC7_seconds_user_done + TC8_seconds_user_done,
+  Online_session = as.logical(Online_session))
+
+```
+## Cleanup and transform data
+
+Data structure
+- `id`: Participant id {integer}
+- `tc`: Test case id {TC1..TC8}
+- `tc_size`: Size of test case. `TRUE` for bigger and `FALSE` for smaller test cases
+- `treatment`: `TRUE` for Augmented Testing and `FALSE` for manual GUI testing (baseline)
+- `duration`: Duration of performing test case in seconds {integer}
+
+```{r cleanup}
+df = data.frame(id=numeric(0),tc=character(0),treatment=logical(0), tc_size=logical(0), duration=numeric(0))
+
+tc_big = c("TC3", "TC4", "TC7", "TC8")
+
+for(i in 1:nrow(df_raw)) {
+  for (tc in tc_names) {
+
+    is_treatment_A = df_raw[i, paste0(tc, "_treatment")] == "A"
+
+    is_tc_size_big = tc %in% tc_big
+
+    print(is_tc_size_big)
+    
+    duration = df_raw[i, paste0(tc, "_seconds_user_done")]
+    
+    df <- df %>% add_row(
+      id=df_raw[i, "ID"],
+      tc=tc,
+      treatment=is_treatment_A,
+      duration=duration,
+      tc_size=is_tc_size_big
+        )
+  }
+}
+
+head(df)
+```
+## Scale duration between 0 and 1
+
+```{r scale}
+scale_values <- function(x){(x-min(x))/(max(x)-min(x))}
+df$duration <- scale_values(df$duration)
+```
