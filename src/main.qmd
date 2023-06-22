@@ -23,7 +23,7 @@ suppressPackageStartupMessages(library(tidyverse))
 ```
 
 ```{r}
-dfRaw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ';')
+dfRaw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
 head(dfRaw)
 
 tcColumns <- c('TC1_seconds_user_done', 'TC2_seconds_user_done', 'TC3_seconds_user_done', 'TC4_seconds_user_done', 'TC5_seconds_user_done', 'TC6_seconds_user_done', 'TC7_seconds_user_done', 'TC8_seconds_user_done')
