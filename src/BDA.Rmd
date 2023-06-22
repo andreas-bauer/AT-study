@@ -15,13 +15,7 @@ library(tidyverse)
 ```{r import}
 df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
 
-tc_cols <- c('TC1_seconds_user_done', 'TC2_seconds_user_done', 'TC3_seconds_user_done', 'TC4_seconds_user_done', 'TC5_seconds_user_done', 'TC6_seconds_user_done', 'TC7_seconds_user_done', 'TC8_seconds_user_done')
 tc_names <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
-
-df_new <- dfRaw %>% mutate(
-  TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds + TC6_seconds + TC7_seconds + TC8_seconds,
-  TC_sum_user_done = TC1_seconds_user_done + TC2_seconds_user_done + TC3_seconds_user_done + TC4_seconds_user_done + TC5_seconds_user_done + TC6_seconds_user_done + TC7_seconds_user_done + TC8_seconds_user_done,
-  Online_session = as.logical(Online_session))
 
 ```
 ## Cleanup and transform data
@@ -45,10 +39,8 @@ for(i in 1:nrow(df_raw)) {
 
     is_tc_size_big = tc %in% tc_big
 
-    print(is_tc_size_big)
-    
     duration = df_raw[i, paste0(tc, "_seconds_user_done")]
-    
+
     df <- df %>% add_row(
       id=df_raw[i, "ID"],
       tc=tc,
