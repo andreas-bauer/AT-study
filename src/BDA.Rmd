@@ -13,7 +13,7 @@ library(tidyverse)
 ## Import
 
 ```{r import}
-df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ';')
+df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
 
 tc_cols <- c('TC1_seconds_user_done', 'TC2_seconds_user_done', 'TC3_seconds_user_done', 'TC4_seconds_user_done', 'TC5_seconds_user_done', 'TC6_seconds_user_done', 'TC7_seconds_user_done', 'TC8_seconds_user_done')
 tc_names <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
