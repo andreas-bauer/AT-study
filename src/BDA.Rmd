@@ -10,15 +10,13 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-## Import
+## Data
 
-```{r import}
+```{r load-data}
 df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
-
-tc_names <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
-
 ```
-## Cleanup and transform data
+
+### Cleanup and transform data
 
 Data structure
 - `id`: Participant id {integer}
@@ -27,35 +25,28 @@ Data structure
 - `treatment`: `TRUE` for Augmented Testing and `FALSE` for manual GUI testing (baseline)
 - `duration`: Duration of performing test case in seconds {integer}
 
-```{r cleanup}
-df = data.frame(id=numeric(0),tc=character(0),treatment=logical(0), tc_size=logical(0), duration=numeric(0))
-
-tc_big = c("TC3", "TC4", "TC7", "TC8")
-
-for(i in 1:nrow(df_raw)) {
-  for (tc in tc_names) {
-
-    is_treatment_A = df_raw[i, paste0(tc, "_treatment")] == "A"
-
-    is_tc_size_big = tc %in% tc_big
-
-    duration = df_raw[i, paste0(tc, "_seconds_user_done")]
-
-    df <- df %>% add_row(
-      id=df_raw[i, "ID"],
-      tc=tc,
-      treatment=is_treatment_A,
-      duration=duration,
-      tc_size=is_tc_size_big
-        )
-  }
-}
+```{r pivot}
+df <- df_raw %>% 
+  pivot_longer(
+    cols = c(matches("TC._treatment"), matches("TC._seconds$")),
+    names_to = c("tc", ".value"), names_pattern = "TC(.)_(.*)"
+  ) %>% 
+  select("ID", "tc", "treatment", "seconds") %>% 
+  mutate(
+    treatment = (treatment == "A"),
+    tc_big = (tc %in% c(3, 4, 7, 8))
+  )
 
 head(df)
 ```
-## Scale duration between 0 and 1
+
+Next, normalize the duration values: scale the duration to an interval of size 1 centered around the mean value of each test case.
 
 ```{r scale}
-scale_values <- function(x){(x-min(x))/(max(x)-min(x))}
-df$duration <- scale_values(df$duration)
+df <- df %>% 
+  group_by(tc) %>% 
+  mutate(
+    duration_scaled = (mean(seconds)-seconds)/(max(seconds)-min(seconds))
+  )
 ```
+
