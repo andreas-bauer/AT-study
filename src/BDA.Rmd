@@ -12,18 +12,25 @@ library(tidyverse)
 
 ## Data
 
+First, load the data from the table of results.
+
 ```{r load-data}
 df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
 ```
 
 ### Cleanup and transform data
 
-Data structure
-- `id`: Participant id {integer}
-- `tc`: Test case id {TC1..TC8}
-- `tc_size`: Size of test case. `TRUE` for bigger and `FALSE` for smaller test cases
-- `treatment`: `TRUE` for Augmented Testing and `FALSE` for manual GUI testing (baseline)
-- `duration`: Duration of performing test case in seconds {integer}
+The data has to be transformed into the following format
+
+| Column | Description | Type |
+|---|---|---|
+| `id` | The identifier of a participant | int |
+| `tc` | The identifier of a test case | int |
+| `tc_big` | Size of the test case.  `TRUE` for bigger and `FALSE` for smaller test cases. | Boolean |
+| `treatment` | `TRUE` for Augmented Testing and `FALSE` for manual GUI testing | Boolean |
+| `duration_scaled` | Duration of performing test cases (normalized) | float |
+
+To achieve this, first [pivot](https://tidyr.tidyverse.org/reference/pivot_longer.html) the table from wide to long format.
 
 ```{r pivot}
 df <- df_raw %>% 
@@ -46,7 +53,182 @@ Next, normalize the duration values: scale the duration to an interval of size 1
 df <- df %>% 
   group_by(tc) %>% 
   mutate(
-    duration_scaled = (mean(seconds)-seconds)/(max(seconds)-min(seconds))
+    duration_scaled = (seconds-mean(seconds))/(max(seconds)-min(seconds))
   )
 ```
 
+## Modeling
+
+Now, model the data using Bayesian data analysis.
+
+```{r bda-lib}
+library(brms)
+library(patchwork)
+library(marginaleffects)
+```
+
+### Formula
+
+First, state the formula representing the relationship of the data. In this analysis, we will compare two possible formulae:
+
+1. `f1`, which assumes an influence of the `treatment` and the test case size (`tc_big`) on the `duration_scaled`.
+2. `f2`, which additionally assumes an [interaction effect](https://bookdown.org/content/3890/interactions.html) between the two predictors.
+
+For each formula, we can obtain a list of prior parameters which need to be defined later on via `brms::get_prior`.
+
+```{r formula-standard}
+f1 <- duration_scaled ~ treatment + tc_big
+
+brms::get_prior(f1, family=gaussian, data=df)
+```
+
+```{r formula-interaction}
+f2 <- duration_scaled ~ treatment * tc_big
+
+brms::get_prior(f2, family=gaussian, data=df)
+```
+
+### Priors
+
+Next, select sensible priors. We need to set priors for the `Intercept`, the slope `b` (or "beta"), and the standard deviation `sigma`.
+
+```{r priors}
+priors <- c(
+  prior(normal(0, 0.5), class=Intercept),
+  prior(normal(0, 0.5), class=b),
+  prior(weibull(2, 1), class=sigma)
+)
+```
+
+To assess the feasibility of the selected priors, sample from only the priors (i.e., avoid the Bayesian learning process for now) by setting `sample_prior="only"`.
+
+```{r m1-prior-sampling}
+m1.prior <- brm(
+  data = df, # provide the data
+  family = gaussian, # determine the distribution type of the response variable (here: Gaussian)
+  formula = f1, # provide the formula
+  prior = priors, # provide the priors
+  iter = 4000, warmup = 1000, chains = 4, cores = 4, seed = 4, # brms settings
+  sample_prior="only" # do not train the parameters, sample only from the priors
+)
+```
+
+```{r m2-prior-sampling}
+m2.prior <- brm(
+  data = df, family = gaussian,
+  formula = f2, prior = priors,
+  iter = 4000, warmup = 1000, chains = 4, cores = 4,
+  seed = 4, sample_prior="only"
+)
+```
+
+With the two competing models defined and sampled from the priors, we can perform a [graphical prior predictive check](https://mc-stan.org/bayesplot/reference/PPC-overview.html) by visualizing the sampled values against the actually observed values.
+
+```{r prior-predictive-check}
+m1.priorpc <- brms::pp_check(m1.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
+m2.priorpc <- brms::pp_check(m2.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
+
+m1.priorpc / m2.priorpc
+```
+
+We expect that the sampled values ($y_{rep}$) are close to the actually observed values ($y$), which confirms, that the actual data is realistic in the eyes of the model given its prior believes.
+
+### Training
+
+With sufficiently sensitive priors, we can train the model on the actual data. For this, we remove the `sample_prior="only"` argument. Instead, we add the `file=fits/m1` argument such that the trained model will be saved in the "fits" folder within the "src" folder (make sure that this folder already exists).
+
+```{r m1-training}
+m1 <- brm(
+  data = df, family = gaussian,
+  formula = f1, prior = priors,
+  iter = 4000, warmup = 1000, chains = 4, cores = 4,
+  seed = 4, file = "fits/m1"
+)
+```
+
+```{r m2-training}
+m2 <- brm(
+  data = df, family = gaussian,
+  formula = f2, prior = priors,
+  iter = 4000, warmup = 1000, chains = 4, cores = 4,
+  seed = 4, file = "fits/m2"
+)
+```
+
+To confirm that the training was successful, we can perform a [graphical posterior predictive check](https://mc-stan.org/bayesplot/reference/PPC-overview.html) similar to the prior predictive check, but this time sampling from the actually trained models
+
+```{r}
+m1.postpc <- brms::pp_check(m1, type="dens_overlay_grouped", ndraws=100, group="treatment")
+m2.postpc <- brms::pp_check(m2, type="dens_overlay_grouped", ndraws=100, group="treatment")
+
+m1.postpc / m2.postpc
+```
+
+The visualizations confirm that the parameters of the trained model imply distributions very close to the actually observed values.
+
+### Model Comparison
+
+To determine, which of the two formulas (and, hence, which of the two models) fit the data better, we can perform a [leave-one-out comparison](http://paul-buerkner.github.io/brms/reference/loo_compare.brmsfit.html). 
+
+```{r loo-compare}
+m1 <- add_criterion(m1, criterion = "loo")
+m2 <- add_criterion(m2, criterion = "loo")
+
+loo_compare(m1, m2)
+```
+
+The higher `elpd_diff` value of m2 confirms that model m2 (including the interaction effect) fits the data better than the standard model without the interaction effect. Consequently, we will only move forward with m2.
+
+## Evaluation
+
+Finally, we can evaluate the best-fitting model m2 to infer insights about the impact of the modeled predictors.
+
+### Parameters
+
+First, we can take a look at the parameters, which are the priors updated based on the observed data.
+
+```{r parameters}
+summary(m2)
+```
+
+We see the following effects:
+
+1. A strongly negative distribution of `treatmentTRUE` ("strongly negative" meaning that the 95% confidence interval is all negative), which means that employing augmented testing is very reliably associated with a `scaled_duration` value below 0, i.e., below the average for that test case. 
+2. A slightly positive distribution of `tc_bigTRUE`, meaning that larger test cases tend to have a longer-than-average time for testing.
+3. A fairly negative distribution of `treatmentTRUE:tc_bigTRUE`, meaning that when a test case is large, the usage of augmented testing reduces the testing duration even stronger.
+
+Keep in mind that these are the interpretations of the raw parameters which do not account for *all of the uncertainty* which the model has picked up, but isolate the effect of the considered predictors.
+
+### Sampling from the Posterior
+
+To account for all of the uncertainty of the model, we can sample from the posterior. For this, we perform the following steps:
+
+1. Define a new `datagrid` in which we fix all predictors. In our case, we once set the treatment to `TRUE` and once to `FALSE`. In both cases, we want an even distribution of the other predictor, `tc_big` (hence, we set it to `c(TRUE, FALSE)`).
+2. Sample from the model given both new datagrids.
+3. Compare the two samples by subtracting the resulting, sampled `duration_scaled` values from each other (`diff`), only keep the sign (i.e., + or -) of the difference (`sign`), and count, how often the sampled `duration_scaled` value from `treatment=TRUE`-sample was greater than from the `treatment=FALSE`-sample (`table`).
+
+Finally, we output those counts divided by the total amount, i.e., the percentage.
+
+```{r posterior-sampling}
+posterior.draws.baseline <- posterior_predict(
+  m2, newdata = datagrid(
+    model = m2,
+    treatment = FALSE,
+    tc_big = c(TRUE, FALSE)
+    ))
+
+posterior.draws.treatment <- posterior_predict(
+  m2, newdata = datagrid(
+    model = m2,
+    treatment = TRUE,
+    tc_big = c(TRUE, FALSE)
+    ))
+
+diff <- posterior.draws.treatment - posterior.draws.baseline
+tab <- table(sign(diff))
+  
+  
+(tab/sum(tab))
+```
+
+This means, that - accounting for all uncertainty that the model picked up and under equal distribution of test case size - the use of augmented testing on average results in shorter test durations in 89.5% of all cases.
