@@ -8,7 +8,41 @@ date: "2023-06-21"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(ggdag)
 ```
+
+This document contains the analysis of the effect of augmented testing on the relative duration for GUI testing.
+
+## Causal Assumptions
+
+### Hypotheses
+
+We formulate the following hypotheses based on our prior knowledge:
+
+1. The use of augmented testing has an influence on the relative duration for GUI testing.
+2. The size of a test case has an influence on the relative duration for GUI testing.
+
+### Directed Acyclic Graph
+
+We can visualize these hypotheses in the following graph:
+
+```{r dag} 
+dag <- dagify(
+  dur ~ at + size,
+  exposure = "at",
+  outcome = "dur",
+  labels = c(dur = "duration_scaled", at = "augmented_testing", size="testcase_size"),
+  coords = list(x=c(at=0, size=0, dur=2),
+                y=c(at=1, size=0, dur=0.5))
+)
+
+ggdag_status(dag, 
+             use_labels = "label", 
+             text = FALSE) +
+  guides(fill = "none", color = "none") + 
+  theme_dag()
+```
+
 
 ## Data
 
