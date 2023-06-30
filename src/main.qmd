@@ -121,7 +121,8 @@ abline(v=steps, col="gray")
 ## Mean values per treatment
 
 ```{r}
-dfSplitMean <- data.frame(TC1_M = mean(tc1M),
+dfSplitMean <- data.frame(
+                      TC1_M = mean(tc1M),
                       TC1_A = mean(tc1A),
                       TC2_M = mean(tc2M),
                       TC2_A = mean(tc2A),
@@ -139,10 +140,23 @@ dfSplitMean <- data.frame(TC1_M = mean(tc1M),
                       TC8_A = mean(tc8A))
 
 dfSplitMean <- dfSplitMean %>%
+  mutate(
+     TC1_diff = 100 / TC1_M * (TC1_A - TC1_M),
+     TC2_diff = 100 / TC2_M * (TC2_A - TC2_M),
+     TC3_diff = 100 / TC3_M * (TC3_A - TC3_M),
+     TC4_diff = 100 / TC4_M * (TC4_A - TC4_M),
+     TC5_diff = 100 / TC5_M * (TC5_A - TC5_M),
+     TC6_diff = 100 / TC6_M * (TC6_A - TC6_M),
+     TC7_diff = 100 / TC7_M * (TC7_A - TC7_M),
+     TC8_diff = 100 / TC8_M * (TC8_A - TC8_M)
+  ) %>%
   mutate_if(is.numeric, round, digits = 0) %>% 
   mutate(
     M_sum = rowSums(select(., ends_with("_M"))),
-    A_sum = rowSums(select(., ends_with("_A"))))
+    A_sum = rowSums(select(., ends_with("_A")))) %>%
+  mutate(
+    sum_diff = round(100 / M_sum * (A_sum - M_sum), 0)
+  )
 
 ```
 
