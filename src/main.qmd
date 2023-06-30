@@ -121,42 +121,30 @@ abline(v=steps, col="gray")
 ## Mean values per treatment
 
 ```{r}
-dfSplitMean <- data.frame(
-                      TC1_M = mean(tc1M),
-                      TC1_A = mean(tc1A),
-                      TC2_M = mean(tc2M),
-                      TC2_A = mean(tc2A),
-                      TC3_M = mean(tc3M),
-                      TC3_A = mean(tc3A),
-                      TC4_M = mean(tc4M),
-                      TC4_A = mean(tc4A),
-                      TC5_M = mean(tc5M),
-                      TC5_A = mean(tc5A),
-                      TC6_M = mean(tc6M),
-                      TC6_A = mean(tc6A),
-                      TC7_M = mean(tc7M),
-                      TC7_A = mean(tc7A),
-                      TC8_M = mean(tc8M),
-                      TC8_A = mean(tc8A))
-
-dfSplitMean <- dfSplitMean %>%
-  mutate(
-     TC1_diff = 100 / TC1_M * (TC1_A - TC1_M),
-     TC2_diff = 100 / TC2_M * (TC2_A - TC2_M),
-     TC3_diff = 100 / TC3_M * (TC3_A - TC3_M),
-     TC4_diff = 100 / TC4_M * (TC4_A - TC4_M),
-     TC5_diff = 100 / TC5_M * (TC5_A - TC5_M),
-     TC6_diff = 100 / TC6_M * (TC6_A - TC6_M),
-     TC7_diff = 100 / TC7_M * (TC7_A - TC7_M),
-     TC8_diff = 100 / TC8_M * (TC8_A - TC8_M)
+df_mean_tc <- df_raw %>%
+  pivot_longer(
+    cols = c(matches("TC._treatment"), matches("TC._seconds_user_done$")),
+    names_to = c("tc", ".value"), names_pattern = "TC(.)_(.*)"
   ) %>%
-  mutate_if(is.numeric, round, digits = 0) %>% 
-  mutate(
-    M_sum = rowSums(select(., ends_with("_M"))),
-    A_sum = rowSums(select(., ends_with("_A")))) %>%
-  mutate(
-    sum_diff = round(100 / M_sum * (A_sum - M_sum), 0)
-  )
+  select("ID", "tc", "treatment", "seconds_user_done")
 
+df_mean_tc <- df_mean_tc %>%
+  group_by(tc, treatment) %>%
+  summarise(mean_seconds=round(mean(seconds_user_done), 0), .groups = "drop")
+
+df_mean_tc <- df_mean_tc %>%
+  pivot_wider(names_from = treatment, values_from = mean_seconds) %>%
+  mutate(diff_percent = round(100 / M * (A - M),0))
+
+head(df_mean_tc, 8)
 ```
+
+### Sum of mean values per treatment
+```{r}
+total_a = sum(df_mean_tc$A)
+total_m = sum(df_mean_tc$M)
+total_diff_percent = round(100 / total_m * (total_a - total_m),0)
+sprintf("Total: %i (M) and %i (A) = %i percent", total_m, total_a, total_diff_percent)
+```
+
 
