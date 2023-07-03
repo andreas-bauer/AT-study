@@ -26,12 +26,11 @@ suppressPackageStartupMessages(library(tidyverse))
 dfRaw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
 head(dfRaw)
 
-tcColumns <- c('TC1_seconds_user_done', 'TC2_seconds_user_done', 'TC3_seconds_user_done', 'TC4_seconds_user_done', 'TC5_seconds_user_done', 'TC6_seconds_user_done', 'TC7_seconds_user_done', 'TC8_seconds_user_done')
+tcColumns <- c('TC1_seconds', 'TC2_seconds', 'TC3_seconds', 'TC4_seconds', 'TC5_seconds', 'TC6_seconds', 'TC7_seconds', 'TC8_seconds')
 tcNames <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
 
 df <- dfRaw %>% mutate(
   TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds + TC6_seconds + TC7_seconds + TC8_seconds,
-  TC_sum_user_done = TC1_seconds_user_done + TC2_seconds_user_done + TC3_seconds_user_done + TC4_seconds_user_done + TC5_seconds_user_done + TC6_seconds_user_done + TC7_seconds_user_done + TC8_seconds_user_done,
   Online_session = as.logical(Online_session))
 
 ```
@@ -87,7 +86,7 @@ dfSplit <- data.frame(TC1_M = c(tc1M, rep(NA, maxLn - length(tc1M))),
 time_sum_bar <- barplot(height=df$TC_sum, names=df$ID, 
         col="#69b3a2",
         horiz=T, las=1,
-        xlim=c(0, 1000),
+        xlim=c(0, 1600),
         xlab="Sum of test case duration per participant in seconds",
         ylab="Paticipant ID"
         )
@@ -123,14 +122,14 @@ abline(v=steps, col="gray")
 ```{r}
 df_mean_tc <- df_raw %>%
   pivot_longer(
-    cols = c(matches("TC._treatment"), matches("TC._seconds_user_done$")),
+    cols = c(matches("TC._treatment"), matches("TC._seconds$")),
     names_to = c("tc", ".value"), names_pattern = "TC(.)_(.*)"
   ) %>%
-  select("ID", "tc", "treatment", "seconds_user_done")
+  select("ID", "tc", "treatment", "seconds")
 
 df_mean_tc <- df_mean_tc %>%
   group_by(tc, treatment) %>%
-  summarise(mean_seconds=round(mean(seconds_user_done), 0), .groups = "drop")
+  summarise(mean_seconds=round(mean(seconds), 0), .groups = "drop")
 
 df_mean_tc <- df_mean_tc %>%
   pivot_wider(names_from = treatment, values_from = mean_seconds) %>%
