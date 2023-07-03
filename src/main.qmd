@@ -36,48 +36,24 @@ df <- dfRaw %>% mutate(
 ```
 ## Seperate two treatments
 ```{r}
-tc1M <- df %>% filter(TC1_treatment == 'M') %>% select(tcColumns[1]) %>% pull(tcColumns[1])
-tc1A <- df %>% filter(TC1_treatment == 'A') %>% select(tcColumns[1]) %>% pull(tcColumns[1])
+df_pivot <- df_raw %>%
+  pivot_longer(
+    cols = c(matches("TC._treatment"), matches("TC._seconds$")),
+    names_to = c("tc", ".value"), names_pattern = "TC(.)_(.*)"
+  ) %>%
+  select("ID", "tc", "treatment", "seconds")
 
-tc2M <- df %>% filter(TC2_treatment == 'M') %>% select(tcColumns[2]) %>% pull(tcColumns[2])
-tc2A <- df %>% filter(TC2_treatment == 'A') %>% select(tcColumns[2]) %>% pull(tcColumns[2])
+df_only_m <- df_pivot %>%
+  filter(treatment == 'M') %>%
+  pivot_wider(names_from = tc, values_from = seconds, names_prefix = "TC") %>%
+  select(starts_with("TC")) %>%
+  select(order(colnames(.)))
 
-tc3M <- df %>% filter(TC3_treatment == 'M') %>% select(tcColumns[3]) %>% pull(tcColumns[3])
-tc3A <- df %>% filter(TC3_treatment == 'A') %>% select(tcColumns[3]) %>% pull(tcColumns[3])
-
-tc4M <- df %>% filter(TC4_treatment == 'M') %>% select(tcColumns[4]) %>% pull(tcColumns[4])
-tc4A <- df %>% filter(TC4_treatment == 'A') %>% select(tcColumns[4]) %>% pull(tcColumns[4])
-
-tc5M <- df %>% filter(TC5_treatment == 'M') %>% select(tcColumns[5]) %>% pull(tcColumns[5])
-tc5A <- df %>% filter(TC5_treatment == 'A') %>% select(tcColumns[5]) %>% pull(tcColumns[5])
-
-tc6M <- df %>% filter(TC6_treatment == 'M') %>% select(tcColumns[6]) %>% pull(tcColumns[6])
-tc6A <- df %>% filter(TC6_treatment == 'A') %>% select(tcColumns[6]) %>% pull(tcColumns[6])
-
-tc7M <- df %>% filter(TC7_treatment == 'M') %>% select(tcColumns[7]) %>% pull(tcColumns[7])
-tc7A <- df %>% filter(TC7_treatment == 'A') %>% select(tcColumns[7]) %>% pull(tcColumns[7])
-
-tc8M <- df %>% filter(TC8_treatment == 'M') %>% select(tcColumns[8]) %>% pull(tcColumns[8])
-tc8A <- df %>% filter(TC8_treatment == 'A') %>% select(tcColumns[8]) %>% pull(tcColumns[8])
-
-maxLn <- max(c(length(tc1M), length(tc1A)))
-dfSplit <- data.frame(TC1_M = c(tc1M, rep(NA, maxLn - length(tc1M))),
-                      TC1_A = c(tc1A, rep(NA, maxLn - length(tc1A))),
-                      TC2_M = c(tc2M, rep(NA, maxLn - length(tc2M))),
-                      TC2_A = c(tc2A, rep(NA, maxLn - length(tc2A))),
-                      TC3_M = c(tc3M, rep(NA, maxLn - length(tc3M))),
-                      TC3_A = c(tc3A, rep(NA, maxLn - length(tc3A))),
-                      TC4_M = c(tc4M, rep(NA, maxLn - length(tc4M))),
-                      TC4_A = c(tc4A, rep(NA, maxLn - length(tc4A))),
-                      TC5_M = c(tc5M, rep(NA, maxLn - length(tc5M))),
-                      TC5_A = c(tc5A, rep(NA, maxLn - length(tc5A))),
-                      TC6_M = c(tc6M, rep(NA, maxLn - length(tc6M))),
-                      TC6_A = c(tc6A, rep(NA, maxLn - length(tc6A))),
-                      TC7_M = c(tc7M, rep(NA, maxLn - length(tc7M))),
-                      TC7_A = c(tc7A, rep(NA, maxLn - length(tc7A))),
-                      TC8_M = c(tc8M, rep(NA, maxLn - length(tc8M))),
-                      TC8_A = c(tc8A, rep(NA, maxLn - length(tc8A))))
-
+df_only_a <- df_pivot %>%
+  filter(treatment == 'A') %>%
+  pivot_wider(names_from = tc, values_from = seconds, names_prefix = "TC") %>%
+  select(starts_with("TC")) %>%
+  select(order(colnames(.)))
 ```
 
 ## Plot total test execution time per subject
@@ -90,7 +66,7 @@ time_sum_bar <- barplot(height=df$TC_sum, names=df$ID,
         xlab="Sum of test case duration per participant in seconds",
         ylab="Paticipant ID"
         )
-text(time_sum_bar, x=df$TC_sum-80 , paste(df$TC_sum, "sec", sep=" ") ,cex=1) 
+text(time_sum_bar, x=df$TC_sum-80 , paste(df$TC_sum, "sec", sep=" ") ,cex=0.8) 
 ```
 
 ## Violin plot per test case
@@ -106,16 +82,24 @@ vioplot(data,
 ```
 ## Violin plot per test case with seperation of the treatments
 ```{r}
-vioplot(dfSplit,
-        col=c("gray","#69b3a2"),
-        ylab="Duration in seconds",
-        xlab="Distribution of duration per test case",
-        cex.names=0.5
+vioplot(df_only_m,
+        side = "left",
+        col="palevioletred",
+        ylim=c(0,400),
+        horiz=T, las=1,
+        xlab="Distribution of duration per test case with seperation of treatment",
+        ylab="Duration in seconds"
         )
+vioplot(df_only_a,
+        side = "right",
+        col="#69b3a2",
+        ylim=c(0,400),
+        horiz=T, las=1,
+        add=T
+        )
+legend("topleft", fill = c("palevioletred", "#69b3a2"), legend = c("manual", 
+    "AT"), title = "Treatment")
 
-steps <- seq(2.5, 14.5 , 2)
-
-abline(v=steps, col="gray")
 ```
 ## Mean values per treatment
 
@@ -145,5 +129,3 @@ total_m = sum(df_mean_tc$M)
 total_diff_percent = round(100 / total_m * (total_a - total_m),0)
 sprintf("Total: %i (M) and %i (A) = %i percent", total_m, total_a, total_diff_percent)
 ```
-
-
