@@ -23,13 +23,12 @@ suppressPackageStartupMessages(library(tidyverse))
 ```
 
 ```{r}
-dfRaw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
-head(dfRaw)
+df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
+head(df_raw)
 
-tcColumns <- c('TC1_seconds', 'TC2_seconds', 'TC3_seconds', 'TC4_seconds', 'TC5_seconds', 'TC6_seconds', 'TC7_seconds', 'TC8_seconds')
-tcNames <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
+tc_names <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
 
-df <- dfRaw %>% mutate(
+df <- df_raw %>% mutate(
   TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds + TC6_seconds + TC7_seconds + TC8_seconds,
   Online_session = as.logical(Online_session))
 
@@ -71,11 +70,12 @@ text(time_sum_bar, x=df$TC_sum-80 , paste(df$TC_sum, "sec", sep=" ") ,cex=0.8)
 
 ## Violin plot per test case
 ```{r}
-data <- df %>% select(all_of(tcColumns))
+data <- df %>% select(ends_with("_seconds"))
 
 vioplot(data,
         col="#69b3a2",
-        names=tcNames,
+        names=tc_names,
+        ylim=c(0,400),
         ylab="Duration in seconds",
         xlab="Distribution of duration per test case"
         )
