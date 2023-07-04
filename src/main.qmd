@@ -23,13 +23,14 @@ suppressPackageStartupMessages(library(tidyverse))
 ```
 
 ```{r}
-df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
+df_raw <- read.csv(file = "../data/results.csv", header = TRUE, sep = ",")
 head(df_raw)
 
-tc_names <- c('TC1', 'TC2', 'TC3', 'TC4', 'TC5', 'TC6', 'TC7', 'TC8')
+tc_names <- c("TC1", "TC2", "TC3", "TC4", "TC5", "TC6", "TC7", "TC8")
 
 df <- df_raw %>% mutate(
-  TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds + TC6_seconds + TC7_seconds + TC8_seconds,
+  TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds +
+    TC6_seconds + TC7_seconds + TC8_seconds,
   Online_session = as.logical(Online_session))
 
 ```
@@ -43,13 +44,13 @@ df_pivot <- df_raw %>%
   select("ID", "tc", "treatment", "seconds")
 
 df_only_m <- df_pivot %>%
-  filter(treatment == 'M') %>%
+  filter(treatment == "M") %>%
   pivot_wider(names_from = tc, values_from = seconds, names_prefix = "TC") %>%
   select(starts_with("TC")) %>%
   select(order(colnames(.)))
 
 df_only_a <- df_pivot %>%
-  filter(treatment == 'A') %>%
+  filter(treatment == "A") %>%
   pivot_wider(names_from = tc, values_from = seconds, names_prefix = "TC") %>%
   select(starts_with("TC")) %>%
   select(order(colnames(.)))
@@ -58,14 +59,16 @@ df_only_a <- df_pivot %>%
 ## Plot total test execution time per subject
 
 ```{r}
-time_sum_bar <- barplot(height=df$TC_sum, names=df$ID, 
-        col="#69b3a2",
-        horiz=T, las=1,
-        xlim=c(0, 1600),
-        xlab="Sum of test case duration per participant in seconds",
-        ylab="Paticipant ID"
+time_sum_bar <- barplot(height = df$TC_sum, names = df$ID,
+        col = "#69b3a2",
+        horiz = TRUE, las = 1,
+        xlim = c(0, 1600),
+        xlab = "Sum of test case duration per participant in seconds",
+        ylab = "Paticipant ID"
         )
-text(time_sum_bar, x=df$TC_sum-80 , paste(df$TC_sum, "sec", sep=" ") ,cex=0.8) 
+text(time_sum_bar,
+     x = df$TC_sum - 80, paste(df$TC_sum, "sec", sep = " "),
+     cex = 0.8)
 ```
 
 ## Violin plot per test case
@@ -73,32 +76,32 @@ text(time_sum_bar, x=df$TC_sum-80 , paste(df$TC_sum, "sec", sep=" ") ,cex=0.8)
 data <- df %>% select(ends_with("_seconds"))
 
 vioplot(data,
-        col="#69b3a2",
-        names=tc_names,
-        ylim=c(0,400),
-        ylab="Duration in seconds",
-        xlab="Distribution of duration per test case"
+        col = "#69b3a2",
+        names = tc_names,
+        ylim = c(0, 400),
+        ylab = "Duration in seconds",
+        xlab = "Distribution of duration per test case"
         )
 ```
 ## Violin plot per test case with seperation of the treatments
 ```{r}
 vioplot(df_only_m,
         side = "left",
-        col="palevioletred",
-        ylim=c(0,400),
-        horiz=T, las=1,
-        xlab="Distribution of duration per test case with seperation of treatment",
-        ylab="Duration in seconds"
+        col = "palevioletred",
+        ylim = c(0, 400),
+        horiz = TRUE, las = 1,
+        xlab = "Distribution of duration per test case and treatment",
+        ylab = "Duration in seconds"
         )
 vioplot(df_only_a,
         side = "right",
-        col="#69b3a2",
-        ylim=c(0,400),
-        horiz=T, las=1,
-        add=T
+        col = "#69b3a2",
+        ylim = c(0, 400),
+        horiz = TRUE, las = 1,
+        add = TRUE
         )
-legend("topleft", fill = c("palevioletred", "#69b3a2"), legend = c("manual", 
-    "AT"), title = "Treatment")
+legend("topleft", fill = c("palevioletred", "#69b3a2"),
+       legend = c("manual", "AT"), title = "Treatment")
 
 ```
 ## Mean values per treatment
@@ -113,19 +116,20 @@ df_mean_tc <- df_raw %>%
 
 df_mean_tc <- df_mean_tc %>%
   group_by(tc, treatment) %>%
-  summarise(mean_seconds=round(mean(seconds), 0), .groups = "drop")
+  summarise(mean_seconds = round(mean(seconds), 0), .groups = "drop")
 
 df_mean_tc <- df_mean_tc %>%
   pivot_wider(names_from = treatment, values_from = mean_seconds) %>%
-  mutate(diff_percent = round(100 / M * (A - M),0))
+  mutate(diff_percent = round(100 / M * (A - M), 0))
 
 head(df_mean_tc, 8)
 ```
 
 ### Sum of mean values per treatment
 ```{r}
-total_a = sum(df_mean_tc$A)
-total_m = sum(df_mean_tc$M)
-total_diff_percent = round(100 / total_m * (total_a - total_m),0)
-sprintf("Total: %i (M) and %i (A) = %i percent", total_m, total_a, total_diff_percent)
+total_a <- sum(df_mean_tc$A)
+total_m <- sum(df_mean_tc$M)
+total_diff_percent <- round(100 / total_m * (total_a - total_m), 0)
+sprintf("Total: %i (M) and %i (A) = %i percent",
+        total_m, total_a, total_diff_percent)
 ```
