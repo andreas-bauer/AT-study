@@ -24,7 +24,6 @@ suppressPackageStartupMessages(library(tidyverse))
 
 ```{r}
 df_raw <- read.csv(file = "../data/results.csv", header = TRUE, sep = ",")
-head(df_raw)
 
 tc_names <- c("TC1", "TC2", "TC3", "TC4", "TC5", "TC6", "TC7", "TC8")
 
@@ -116,20 +115,35 @@ df_mean_tc <- df_raw %>%
 
 df_mean_tc <- df_mean_tc %>%
   group_by(tc, treatment) %>%
-  summarise(mean_seconds = round(mean(seconds), 0), .groups = "drop")
+  summarise(mean_seconds = as.integer(round(mean(seconds), 0)), .groups = "drop")
 
 df_mean_tc <- df_mean_tc %>%
   pivot_wider(names_from = treatment, values_from = mean_seconds) %>%
-  mutate(diff_percent = round(100 / M * (A - M), 0))
+  mutate(diff_percent = as.integer(round(100 / M * (A - M), 0))) %>%
+  select(tc, M, A, diff_percent)
+
 
 head(df_mean_tc, 8)
 ```
-
 ### Sum of mean values per treatment
 ```{r}
-total_a <- sum(df_mean_tc$A)
-total_m <- sum(df_mean_tc$M)
-total_diff_percent <- round(100 / total_m * (total_a - total_m), 0)
+total_a <- as.integer(sum(df_mean_tc$A))
+total_m <- as.integer(sum(df_mean_tc$M))
+total_diff_percent <- as.integer(round(100 / total_m * (total_a - total_m), 0))
 sprintf("Total: %i (M) and %i (A) = %i percent",
         total_m, total_a, total_diff_percent)
 ```
+
+### LaTeX table export
+```{r}
+suppressPackageStartupMessages(library(xtable))
+
+df_table <- df_mean_tc %>% 
+   add_row(tc = "Total", A = total_a, M = total_m, diff_percent = total_diff_percent)
+
+print(
+  xtable(df_table, type = "latex"),
+  include.rownames=FALSE)
+```
+
+
