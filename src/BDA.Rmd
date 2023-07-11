@@ -91,6 +91,22 @@ df <- df %>%
   )
 ```
 
+Finally, add the learning variable: because the order of the test cases was the same for all participants, there is a potential learning effect in using AT. Hence, determine the *number of previous test cases in which augmented testing has already been used* to represent the learning effect.
+
+```{r learning}
+# determine the group of participants which obtained the treatment first, i.e., all with an even ID
+group.treatment.first <- seq(2, max(df$ID), 2)
+
+# for each of the two groups, determine the "number of previous test cases employing augmenting testing"
+df <- df %>% 
+  mutate(
+    at.learned = ifelse(
+      ID %in% group.treatment.first, 
+      ifelse(tc %in% c(1,3,5,7), (as.integer(tc)-1)/2, 4),
+      ifelse(tc %in% c(4,6,8), (as.integer(tc)-2)/2, 0))
+  )
+```
+
 ## Modeling
 
 Now, model the data using Bayesian data analysis.
@@ -122,6 +138,13 @@ f2 <- duration_scaled ~ treatment * tc_big
 brms::get_prior(f2, family=gaussian, data=df)
 ```
 
+```{r formula-learning}
+f3 <- duration_scaled ~ treatment * tc_big + treatment * at.learned
+
+brms::get_prior(f3, family=gaussian, data=df)
+```
+
+
 ### Priors
 
 Next, select sensible priors. We need to set priors for the `Intercept`, the slope `b` (or "beta"), and the standard deviation `sigma`.
@@ -130,6 +153,12 @@ Next, select sensible priors. We need to set priors for the `Intercept`, the slo
 priors <- c(
   prior(normal(0, 0.5), class=Intercept),
   prior(normal(0, 0.5), class=b),
+  prior(weibull(2, 1), class=sigma)
+)
+
+priors2 <- c(
+  prior(normal(0, 0.3), class=Intercept),
+  prior(normal(0, 0.3), class=b),
   prior(weibull(2, 1), class=sigma)
 )
 ```
@@ -156,16 +185,26 @@ m2.prior <- brm(
 )
 ```
 
+```{r m3-prior-sampling}
+m3.prior <- brm(
+  data = df, family = gaussian,
+  formula = f3, prior = priors2,
+  iter = 4000, warmup = 1000, chains = 4, cores = 4,
+  seed = 4, sample_prior="only"
+)
+```
+
 With the two competing models defined and sampled from the priors, we can perform a [graphical prior predictive check](https://mc-stan.org/bayesplot/reference/PPC-overview.html) by visualizing the sampled values against the actually observed values.
 
 ```{r prior-predictive-check}
 m1.priorpc <- brms::pp_check(m1.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
 m2.priorpc <- brms::pp_check(m2.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
+m3.priorpc <- brms::pp_check(m3.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
 
-m1.priorpc / m2.priorpc
+m1.priorpc / m2.priorpc / m3.priorpc
 ```
 
-We expect that the sampled values ($y_{rep}$) are close to the actually observed values ($y$), which confirms, that the actual data is realistic in the eyes of the model given its prior believes.
+We expect that the sampled values ($y_{rep}$) are close to the actually observed values ($y$), which confirms that the actual data is realistic in the eyes of the model given its prior believes.
 
 ### Training
 
@@ -189,13 +228,23 @@ m2 <- brm(
 )
 ```
 
+```{r m3-training}
+m3 <- brm(
+  data = df, family = gaussian,
+  formula = f3, prior = priors2,
+  iter = 4000, warmup = 1000, chains = 4, cores = 4,
+  seed = 4, file = "fits/m3"
+)
+```
+
 To confirm that the training was successful, we can perform a [graphical posterior predictive check](https://mc-stan.org/bayesplot/reference/PPC-overview.html) similar to the prior predictive check, but this time sampling from the actually trained models
 
-```{r}
+```{r posterior-check}
 m1.postpc <- brms::pp_check(m1, type="dens_overlay_grouped", ndraws=100, group="treatment")
 m2.postpc <- brms::pp_check(m2, type="dens_overlay_grouped", ndraws=100, group="treatment")
+m3.postpc <- brms::pp_check(m3, type="dens_overlay_grouped", ndraws=100, group="treatment")
 
-m1.postpc / m2.postpc
+m1.postpc / m2.postpc / m3.postpc
 ```
 
 The visualizations confirm that the parameters of the trained model imply distributions very close to the actually observed values.
@@ -207,11 +256,12 @@ To determine, which of the two formulas (and, hence, which of the two models) fi
 ```{r loo-compare}
 m1 <- add_criterion(m1, criterion = "loo")
 m2 <- add_criterion(m2, criterion = "loo")
+m3 <- add_criterion(m3, criterion = "loo")
 
-loo_compare(m1, m2)
+loo_compare(m1, m2, m3)
 ```
 
-The higher `elpd_diff` value of m2 confirms that model m2 (including the interaction effect) fits the data better than the standard model without the interaction effect. Consequently, we will only move forward with m2.
+The higher `elpd_diff` values of m2 and m3 confirm that model m2 and m3 (including the interaction effect) fit the data better than the standard model without the interaction effect. Consequently, we will only move forward with one of those models.
 
 ## Evaluation
 
@@ -222,7 +272,7 @@ Finally, we can evaluate the best-fitting model m2 to infer insights about the i
 First, we can take a look at the parameters, which are the priors updated based on the observed data.
 
 ```{r parameters}
-summary(m2)
+summary(m3)
 ```
 
 We see the following effects:
