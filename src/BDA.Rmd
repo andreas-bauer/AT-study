@@ -49,7 +49,7 @@ ggdag_status(dag,
 First, load the data from the table of results.
 
 ```{r load-data}
-df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',')
+df_raw <- read.csv(file = '../data/results.csv', header = TRUE, sep = ',', fileEncoding="UTF-8-BOM")
 ```
 
 ### Cleanup and transform data
