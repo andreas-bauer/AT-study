@@ -103,6 +103,8 @@ legend("topleft", fill = c("palevioletred", "#69b3a2"),
        legend = c("manual", "AT"), title = "Treatment")
 
 ```
+
+
 ## Mean values per treatment
 
 ```{r}
@@ -138,12 +140,59 @@ sprintf("Total: %i (M) and %i (A) = %i percent",
 ```{r}
 suppressPackageStartupMessages(library(xtable))
 
-df_table <- df_mean_tc %>% 
+df_table <- df_mean_tc %>%
    add_row(tc = "Total", A = total_a, M = total_m, diff_percent = total_diff_percent)
 
 print(
   xtable(df_table, type = "latex"),
-  include.rownames=FALSE)
+  include.rownames = FALSE)
 ```
 
+## Export plots as TikZ file
+
+```{r}
+suppressPackageStartupMessages(library(tikzDevice))
+```
+
+Test execution timer per participant
+
+```{r}
+#| output: false
+suppressPackageStartupMessages(library(tikzDevice))
+tikz("time_per_subject.tex", width = 6, height = 4)
+par(mar = c(2, 4, 1, 1)) # Set the margin
+barplot(height = df$TC_sum, names = df$ID,
+        col = "#69b3a2",
+        horiz = TRUE, las = 1,
+        xlim = c(0, 1600),
+        ylab = "Paticipants"
+        )
+text(time_sum_bar, x = df$TC_sum - 80, paste(df$TC_sum, "sec", sep = " "))
+dev.off
+```
+
+Violin plot of time per test case (both treatments)
+```{r}
+#| output: false
+tikz("time_per_tc_split.tex", width = 6.5, height = 3)
+par(mar = c(2, 4, 1, 1)) # Set the margin
+vioplot(df_only_m,
+        side = "left",
+        col = "palevioletred",
+        ylim = c(0, 400),
+        horiz = TRUE, las = 1,
+        xlab = "Distribution of duration per test case and treatment",
+        ylab = "Duration in seconds"
+        )
+vioplot(df_only_a,
+        side = "right",
+        col = "#69b3a2",
+        ylim = c(0, 400),
+        horiz = TRUE, las = 1,
+        add = TRUE
+        )
+legend("topleft", fill = c("palevioletred", "#69b3a2"),
+       legend = c("manual", "AT"), title = "Treatment")
+dev.off
+```
 
