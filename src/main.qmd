@@ -170,8 +170,25 @@ barplot(height = df$TC_sum, names = df$ID,
 text(time_sum_bar, x = df$TC_sum - 80, paste(df$TC_sum, "sec", sep = " "))
 dev.off
 ```
+Violin plot of time distribution per test case
+```{r}
+#| output: false
+tikz("time_per_tc.tex", width = 6.5, height = 3)
+par(mar = c(2, 4, 1, 1)) # Set the margin
 
-Violin plot of time per test case (both treatments)
+data <- df %>% select(ends_with("_seconds"))
+
+vioplot(data,
+        col = "#69b3a2",
+        names = tc_names,
+        ylim = c(0, 400),
+        ylab = "Duration in seconds"
+        )
+
+dev.off
+```
+
+Violin plot of time distribution per test case (both treatments)
 ```{r}
 #| output: false
 tikz("time_per_tc_split.tex", width = 6.5, height = 3)
