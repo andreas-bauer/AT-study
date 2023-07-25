@@ -22,18 +22,20 @@ We formulate the following hypotheses based on our prior knowledge:
 1. The use of augmented testing has an influence on the relative duration for GUI testing.
 2. The size of a test case has an influence on the relative duration for GUI testing.
 
+Additionally, we need to consider that *the repeated use of the augmented testing system has an influence on the relative duration for GUI testing* (learning effect).
+
 ### Directed Acyclic Graph
 
 We can visualize these hypotheses in the following graph:
 
 ```{r dag} 
 dag <- dagify(
-  dur ~ at + size,
+  dur ~ at + size + learn,
   exposure = "at",
   outcome = "dur",
-  labels = c(dur = "duration_scaled", at = "augmented_testing", size="testcase_size"),
-  coords = list(x=c(at=0, size=0, dur=2),
-                y=c(at=1, size=0, dur=0.5))
+  labels = c(dur = "duration_scaled", at = "augmented_testing", size="testcase_size", learn="learning_effect"),
+  coords = list(x=c(at=0, size=0, learn=0, dur=2),
+                y=c(at=1, size=0, learn=-1, dur=0))
 )
 
 ggdag_status(dag, 
@@ -119,12 +121,18 @@ library(marginaleffects)
 
 ### Formula
 
-First, state the formula representing the relationship of the data. In this analysis, we will compare two possible formulae:
+First, we define our models by (1) representing our DAG - i.e., the assumed causal relationships within our data - in a formula, and (2) selecting an appropriate distribution. In this analysis, we will compare the following models, which are further explained below:
 
-1. `f1`, which assumes an influence of the `treatment` and the test case size (`tc_big`) on the `duration_scaled`.
-2. `f2`, which additionally assumes an [interaction effect](https://bookdown.org/content/3890/interactions.html) between the two predictors.
+| ID | Distribution | Interaction | Learning | F |
+|---|---|---|---|---|
+| `m1` | Gaussian | no | no | `f1` |
+| `m2` | Gaussian | yes | no | `f2` |
+| `m3` | Gaussian | yes | yes | `f3` |
+| `m4` | Skew_normal | yes | yes | `f3` |
 
 For each formula, we can obtain a list of prior parameters which need to be defined later on via `brms::get_prior`.
+
+The model `m1` simply assumes an influence of the `treatment` and the test case size (`tc_big`) on the `duration_scaled`.
 
 ```{r formula-standard}
 f1 <- duration_scaled ~ treatment + tc_big
@@ -132,11 +140,15 @@ f1 <- duration_scaled ~ treatment + tc_big
 brms::get_prior(f1, family=gaussian, data=df)
 ```
 
+The model `m2` additionally assumes an [interaction effect](https://bookdown.org/content/3890/interactions.html) between the two predictors.
+
 ```{r formula-interaction}
 f2 <- duration_scaled ~ treatment * tc_big
 
 brms::get_prior(f2, family=gaussian, data=df)
 ```
+
+The model `m3` additionally assumes a learning effect which occurs as an interaction between the treatment and the number of test cases already processed using augmented testing (`at.learned`). The hypothesis is that the more often a subject has used the augmented testing system, the quicker they become (i.e., the lower the `duration_scaled` becomes).
 
 ```{r formula-learning}
 f3 <- duration_scaled ~ treatment * tc_big + treatment * at.learned
@@ -144,6 +156,13 @@ f3 <- duration_scaled ~ treatment * tc_big + treatment * at.learned
 brms::get_prior(f3, family=gaussian, data=df)
 ```
 
+The model `m4` assumes that the response variable `duration_scaled` does not follow a Gaussian distribution, but rather a [skewed Gaussian distribution](http://paul-buerkner.github.io/brms/reference/SkewNormal.html). We derive this insight from the posterior predictive checks.
+
+```{r formula-skew}
+brms::get_prior(f3, familiy=skew_normal, data=df)
+```
+
+All of these models represent our DAG but with slightly different ontological assumptions. We will compare the predictive power of these models to determine, which of these models explains the data best.
 
 ### Priors
 
@@ -172,7 +191,8 @@ m1.prior <- brm(
   formula = f1, # provide the formula
   prior = priors, # provide the priors
   iter = 4000, warmup = 1000, chains = 4, cores = 4, seed = 4, # brms settings
-  sample_prior="only" # do not train the parameters, sample only from the priors
+  sample_prior="only", # do not train the parameters, sample only from the priors, 
+  file = "fits/m1.prior" # save the fit in a file
 )
 ```
 
@@ -181,7 +201,7 @@ m2.prior <- brm(
   data = df, family = gaussian,
   formula = f2, prior = priors,
   iter = 4000, warmup = 1000, chains = 4, cores = 4,
-  seed = 4, sample_prior="only"
+  seed = 4, sample_prior="only", file = "fits/m2.prior"
 )
 ```
 
@@ -190,18 +210,28 @@ m3.prior <- brm(
   data = df, family = gaussian,
   formula = f3, prior = priors2,
   iter = 4000, warmup = 1000, chains = 4, cores = 4,
-  seed = 4, sample_prior="only"
+  seed = 4, sample_prior="only", file = "fits/m3.prior"
 )
 ```
 
-With the two competing models defined and sampled from the priors, we can perform a [graphical prior predictive check](https://mc-stan.org/bayesplot/reference/PPC-overview.html) by visualizing the sampled values against the actually observed values.
+```{r m4-prior-sampling}
+m4.prior <- brm(
+  data = df, family = skew_normal,
+  formula = f3, prior = priors2,
+  iter = 4000, warmup = 1000, chains = 4, cores = 4,
+  seed = 4, sample_prior="only", file = "fits/m4.prior"
+)
+```
+
+With the competing models defined and sampled from the priors, we can perform a [graphical prior predictive check](https://mc-stan.org/bayesplot/reference/PPC-overview.html) by visualizing the sampled values against the actually observed values.
 
 ```{r prior-predictive-check}
 m1.priorpc <- brms::pp_check(m1.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
 m2.priorpc <- brms::pp_check(m2.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
 m3.priorpc <- brms::pp_check(m3.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
+m4.priorpc <- brms::pp_check(m4.prior, type="dens_overlay_grouped", ndraws=100, group="treatment")
 
-m1.priorpc / m2.priorpc / m3.priorpc
+m1.priorpc / m2.priorpc / m3.priorpc / m4.priorpc
 ```
 
 We expect that the sampled values ($y_{rep}$) are close to the actually observed values ($y$), which confirms that the actual data is realistic in the eyes of the model given its prior believes.
@@ -237,17 +267,27 @@ m3 <- brm(
 )
 ```
 
+```{r m4-training}
+m4 <- brm(
+  data = df, family = skew_normal,
+  formula = f3, prior = priors2,
+  iter = 4000, warmup = 1000, chains = 4, cores = 4,
+  seed = 4, file = "fits/m4"
+)
+```
+
 To confirm that the training was successful, we can perform a [graphical posterior predictive check](https://mc-stan.org/bayesplot/reference/PPC-overview.html) similar to the prior predictive check, but this time sampling from the actually trained models
 
 ```{r posterior-check}
 m1.postpc <- brms::pp_check(m1, type="dens_overlay_grouped", ndraws=100, group="treatment")
 m2.postpc <- brms::pp_check(m2, type="dens_overlay_grouped", ndraws=100, group="treatment")
 m3.postpc <- brms::pp_check(m3, type="dens_overlay_grouped", ndraws=100, group="treatment")
+m4.postpc <- brms::pp_check(m4, type="dens_overlay_grouped", ndraws=100, group="treatment")
 
-m1.postpc / m2.postpc / m3.postpc
+m1.postpc / m2.postpc / m3.postpc / m4.postpc
 ```
 
-The visualizations confirm that the parameters of the trained model imply distributions very close to the actually observed values.
+The visualizations confirm that the parameters of the trained model imply distributions very close to the actually observed values, but only model `m4` accommodates the skeweness that the values for `treatment = TRUE` imply.
 
 ### Model Comparison
 
@@ -257,35 +297,80 @@ To determine, which of the two formulas (and, hence, which of the two models) fi
 m1 <- add_criterion(m1, criterion = "loo")
 m2 <- add_criterion(m2, criterion = "loo")
 m3 <- add_criterion(m3, criterion = "loo")
+m4 <- add_criterion(m4, criterion = "loo")
 
-loo_compare(m1, m2, m3)
+loo_compare(m1, m2, m3, m4)
 ```
 
-The higher `elpd_diff` values of m2 and m3 confirm that model m2 and m3 (including the interaction effect) fit the data better than the standard model without the interaction effect. Consequently, we will only move forward with one of those models.
+The model `m4` clearly outperforms all other models, which is visible through its $elpd\_diff$ value of 0.0, while all other models perform significantly worse. Model `m4` hence has the best predictive power and will be used to move forward.
 
 ## Evaluation
 
-Finally, we can evaluate the best-fitting model m2 to infer insights about the impact of the modeled predictors.
+We can evaluate the best-fitting model to infer insights about the impact of the modeled predictors.
 
 ### Parameters
 
 First, we can take a look at the parameters, which are the priors updated based on the observed data.
 
 ```{r parameters}
-summary(m3)
+summary(m4)
 ```
 
 We see the following effects:
 
-1. A strongly negative distribution of `treatmentTRUE` ("strongly negative" meaning that the 95% confidence interval is all negative), which means that employing augmented testing is very reliably associated with a `scaled_duration` value below 0, i.e., below the average for that test case. 
-2. A slightly positive distribution of `tc_bigTRUE`, meaning that larger test cases tend to have a longer-than-average time for testing.
-3. A fairly negative distribution of `treatmentTRUE:tc_bigTRUE`, meaning that when a test case is large, the usage of augmented testing reduces the testing duration even stronger.
+1. A mostly negative distribution of `treatmentTRUE` ("mostly negative" meaning that the most of the 95% confidence interval is negative), which means that employing augmented testing is predominantly associated with a `scaled_duration` value below 0, i.e., below the average for that test case. 
+2. A strongly positive distribution of `tc_bigTRUE`, meaning that larger test cases tend to have a longer-than-average time for testing.
+3. A strongly negative distribution of `treatmentTRUE:tc_bigTRUE`, meaning that when a test case is large, the usage of augmented testing reduces the testing duration even stronger.
+4. A negligibly negative distribution of `treatmentTRUE:at.learned`, meaning that the the learning effect coinciding with the treatment very slightly reduces the scaled duration.
 
-Keep in mind that these are the interpretations of the raw parameters which do not account for *all of the uncertainty* which the model has picked up, but isolate the effect of the considered predictors.
+These are the interpretations of the raw parameters which do not account for *all of the uncertainty* which the model has picked up, but isolate the effect of the considered predictors.
+
+### Marginal and Conditional effects
+
+A more sophisticated evaluation uses plots of marginal and conditional effects.
+
+```{r effect-plots}
+eff <- conditional_effects(m4)
+```
+
+#### Marginal effects
+
+[Marginal effects](https://www.andrewheiss.com/blog/2022/05/20/marginalia/) represent the isolated effect of a predictor while fixing all other predictors at an average (mean or mode) level.
+
+```{r marginal-plots}
+marginal.effect.treatment <- plot(eff, plot = FALSE)[[1]]
+marginal.effect.size <- plot(eff, plot = FALSE)[[2]]
+marginal.effect.learning <- plot(eff, plot = FALSE)[[3]]
+
+marginal.effect.treatment | marginal.effect.size | marginal.effect.learning
+```
+
+In our case, it visualizes both the effects but also the uncertainty of the impact of each individual predictor.
+
+#### Conditional effects
+
+Conditional effects visualize the interaction between two predictor variables. In the currently evaluated model, we have two interaction effects to look into:
+
+1. The interaction between the *treatment* and the *test case size* (`treatment * tc_big`)
+2. The interaction between the *treatment* and the *learning effect* (`treatment * at.learned`)
+
+```{r conditional-plots}
+conditional.effect.treatment <- plot(eff, plot = FALSE)[[4]] + theme(legend.position="bottom")
+conditional.effect.learning <- plot(eff, plot = FALSE)[[5]] + theme(legend.position="bottom")
+
+conditional.effect.treatment | conditional.effect.learning
+```
+
+The visualizations show the following:
+
+1. Larger test cases benefit much stronger from the use of augmented testing than smaller test cases: when comparing the distributions for `treatment=FALSE` vs `treatment=TRUE`, the distance between the two means is much bigger for `tc_big=TRUE` than `tc_big=FALSE`.
+2. The repeated use of augmented testing is slightly beneficial in terms of efficiency, as the effect of `at.learned` is more negative (i.e., reduced `duration_scaled` more) when `treatment=TRUE` than when `treatment=FALSE`.
+
+The second interaction effect is fairly trivial: getting used to the augmented testing system (Scout) has a stronger effect on effectiveness when using augmented testing than when not using it. But even if this insight is trivial, it shows us that the expected learning effect is present in the data and modeling it makes the other predictors more precise by explaining at least this fraction of the effect on the response variable by the learning effect.
 
 ### Sampling from the Posterior
 
-To account for all of the uncertainty of the model, we can sample from the posterior. For this, we perform the following steps:
+Finally, to account for all of the uncertainty of the model, we can sample from the posterior. For this, we perform the following steps:
 
 1. Define a new `datagrid` in which we fix all predictors. In our case, we once set the treatment to `TRUE` and once to `FALSE`. In both cases, we want an even distribution of the other predictor, `tc_big` (hence, we set it to `c(TRUE, FALSE)`).
 2. Sample from the model given both new datagrids.
@@ -295,15 +380,15 @@ Finally, we output those counts divided by the total amount, i.e., the percentag
 
 ```{r posterior-sampling}
 posterior.draws.baseline <- posterior_predict(
-  m2, newdata = datagrid(
-    model = m2,
+  m4, newdata = datagrid(
+    model = m4,
     treatment = FALSE,
     tc_big = c(TRUE, FALSE)
     ))
 
 posterior.draws.treatment <- posterior_predict(
-  m2, newdata = datagrid(
-    model = m2,
+  m4, newdata = datagrid(
+    model = m4,
     treatment = TRUE,
     tc_big = c(TRUE, FALSE)
     ))
@@ -315,4 +400,4 @@ tab <- table(sign(diff))
 (tab/sum(tab))
 ```
 
-This means, that - accounting for all uncertainty that the model picked up and under equal distribution of test case size - the use of augmented testing on average results in shorter test durations in 89.5% of all cases.
+This means, that - accounting for all uncertainty that the model picked up and under equal distribution of test case size - the use of augmented testing on average results in shorter test duration in about 70% of all cases.
