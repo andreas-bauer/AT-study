@@ -287,6 +287,10 @@ m4.postpc <- brms::pp_check(m4, type="dens_overlay_grouped", ndraws=100, group="
 m1.postpc / m2.postpc / m3.postpc / m4.postpc
 ```
 
+```{r posterior-check-plot include = FALSE}
+ggsave( 'figures/bda-posterior-check.pdf', height = 20,  units = "cm" )
+```
+
 The visualizations confirm that the parameters of the trained model imply distributions very close to the actually observed values, but only model `m4` accommodates the skeweness that the values for `treatment = TRUE` imply.
 
 ### Model Comparison
