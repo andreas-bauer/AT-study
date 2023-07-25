@@ -159,7 +159,7 @@ Test execution timer per participant
 ```{r}
 #| output: false
 suppressPackageStartupMessages(library(tikzDevice))
-tikz("time_per_subject.tex", width = 6, height = 4)
+tikz("figures/time_per_subject.tex", width = 6, height = 4)
 par(mar = c(2, 4, 1, 1)) # Set the margin
 barplot(height = df$TC_sum, names = df$ID,
         col = "#69b3a2",
@@ -173,7 +173,7 @@ dev.off
 Violin plot of time distribution per test case
 ```{r}
 #| output: false
-tikz("time_per_tc.tex", width = 6.5, height = 3)
+tikz("figures/time_per_tc.tex", width = 6.5, height = 3)
 par(mar = c(2, 4, 1, 1)) # Set the margin
 
 data <- df %>% select(ends_with("_seconds"))
@@ -191,7 +191,7 @@ dev.off
 Violin plot of time distribution per test case (both treatments)
 ```{r}
 #| output: false
-tikz("time_per_tc_split.tex", width = 6.5, height = 3)
+tikz("figures/time_per_tc_split.tex", width = 6.5, height = 3)
 par(mar = c(2, 4, 1, 1)) # Set the margin
 vioplot(df_only_m,
         side = "left",
