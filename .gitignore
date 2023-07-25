@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 src/fits/
+src/figures/*
+!src/figures/.gitkeep
