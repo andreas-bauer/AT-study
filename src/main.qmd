@@ -13,7 +13,7 @@ TBA
 
 Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
 
-## Import and clean-up data
+## Load libraries
 
 ```{r}
 suppressPackageStartupMessages(library(caret))
@@ -21,6 +21,15 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(vioplot))
 suppressPackageStartupMessages(library(tidyverse))
 ```
+
+## Config
+
+```{r}
+color_main <- "#69b3a2"
+color_alt <- "palevioletred" 
+```
+
+## Import data
 
 ```{r}
 df_raw <- read.csv(file = "../data/results.csv", header = TRUE, sep = ",")
@@ -59,7 +68,7 @@ df_only_a <- df_pivot %>%
 
 ```{r}
 time_sum_bar <- barplot(height = df$TC_sum, names = df$ID,
-        col = "#69b3a2",
+        col = color_main,
         horiz = TRUE, las = 1,
         xlim = c(0, 1600),
         xlab = "Sum of test case duration per participant in seconds",
@@ -75,7 +84,7 @@ text(time_sum_bar,
 data <- df %>% select(ends_with("_seconds"))
 
 vioplot(data,
-        col = "#69b3a2",
+        col = color_main,
         names = tc_names,
         ylim = c(0, 400),
         ylab = "Duration in seconds",
@@ -86,7 +95,7 @@ vioplot(data,
 ```{r}
 vioplot(df_only_m,
         side = "left",
-        col = "palevioletred",
+        col = color_alt,
         ylim = c(0, 400),
         horiz = TRUE, las = 1,
         xlab = "Distribution of duration per test case and treatment",
@@ -94,12 +103,12 @@ vioplot(df_only_m,
         )
 vioplot(df_only_a,
         side = "right",
-        col = "#69b3a2",
+        col = color_main,
         ylim = c(0, 400),
         horiz = TRUE, las = 1,
         add = TRUE
         )
-legend("topleft", fill = c("palevioletred", "#69b3a2"),
+legend("topleft", fill = c(color_alt, color_main),
        legend = c("manual", "AT"), title = "Treatment")
 
 ```
@@ -162,7 +171,7 @@ suppressPackageStartupMessages(library(tikzDevice))
 tikz("figures/time_per_subject.tex", width = 6, height = 4)
 par(mar = c(2, 4, 1, 1)) # Set the margin
 barplot(height = df$TC_sum, names = df$ID,
-        col = "#69b3a2",
+        col = color_main,
         horiz = TRUE, las = 1,
         xlim = c(0, 1600),
         ylab = "Paticipants"
@@ -179,7 +188,7 @@ par(mar = c(2, 4, 1, 1)) # Set the margin
 data <- df %>% select(ends_with("_seconds"))
 
 vioplot(data,
-        col = "#69b3a2",
+        col = color_main,
         names = tc_names,
         ylim = c(0, 400),
         ylab = "Duration in seconds"
@@ -195,7 +204,7 @@ tikz("figures/time_per_tc_split.tex", width = 6.5, height = 3)
 par(mar = c(2, 4, 1, 1)) # Set the margin
 vioplot(df_only_m,
         side = "left",
-        col = "palevioletred",
+        col = color_alt,
         ylim = c(0, 400),
         horiz = TRUE, las = 1,
         xlab = "Distribution of duration per test case and treatment",
@@ -203,12 +212,12 @@ vioplot(df_only_m,
         )
 vioplot(df_only_a,
         side = "right",
-        col = "#69b3a2",
+        col = color_main,
         ylim = c(0, 400),
         horiz = TRUE, las = 1,
         add = TRUE
         )
-legend("topleft", fill = c("palevioletred", "#69b3a2"),
+legend("topleft", fill = c(color_alt, color_main),
        legend = c("manual", "AT"), title = "Treatment")
 dev.off
 ```
