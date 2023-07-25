@@ -279,10 +279,10 @@ m4 <- brm(
 To confirm that the training was successful, we can perform a [graphical posterior predictive check](https://mc-stan.org/bayesplot/reference/PPC-overview.html) similar to the prior predictive check, but this time sampling from the actually trained models
 
 ```{r posterior-check}
-m1.postpc <- brms::pp_check(m1, type="dens_overlay_grouped", ndraws=100, group="treatment")
-m2.postpc <- brms::pp_check(m2, type="dens_overlay_grouped", ndraws=100, group="treatment")
-m3.postpc <- brms::pp_check(m3, type="dens_overlay_grouped", ndraws=100, group="treatment")
-m4.postpc <- brms::pp_check(m4, type="dens_overlay_grouped", ndraws=100, group="treatment")
+m1.postpc <- brms::pp_check(m1, type="dens_overlay_grouped", ndraws=100, group="treatment") + ggplot2::ggtitle("M1")
+m2.postpc <- brms::pp_check(m2, type="dens_overlay_grouped", ndraws=100, group="treatment") + ggplot2::ggtitle("M2")
+m3.postpc <- brms::pp_check(m3, type="dens_overlay_grouped", ndraws=100, group="treatment") + ggplot2::ggtitle("M3")
+m4.postpc <- brms::pp_check(m4, type="dens_overlay_grouped", ndraws=100, group="treatment") + ggplot2::ggtitle("M4")
 
 m1.postpc / m2.postpc / m3.postpc / m4.postpc
 ```
