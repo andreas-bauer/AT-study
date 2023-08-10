@@ -25,8 +25,8 @@ suppressPackageStartupMessages(library(tidyverse))
 ## Config
 
 ```{r}
-color_main <- "#69b3a2"
-color_alt <- "palevioletred" 
+color_main <- "#02BFC4"
+color_alt <- "#F7766D"
 ```
 
 ## Import data
