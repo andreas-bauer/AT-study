@@ -33,4 +33,6 @@ make render
 
 ## License
 
-TBA
+Copyright © 2023 Andreas Bauer, Julian Frattini
+
+This work (source code) is licensed under  [MIT](./LICENSE).
