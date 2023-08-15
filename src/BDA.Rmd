@@ -369,7 +369,17 @@ conditional.effect.learning <- plot(eff, plot = FALSE)[[5]] +
 
 conditional.effect.treatment | conditional.effect.learning
 ```
+```{r conditional-plots-export include = FALSE}
+suppressPackageStartupMessages(library(tikzDevice))
 
+tikz("figures/bda-conditional-treatment.tex", width = 6, height = 4)
+conditional.effect.treatment
+dev.off()
+
+tikz("figures/bda-conditional-learing.tex", width = 6, height = 4)
+conditional.effect.learning
+dev.off()
+```
 The visualizations show the following:
 
 1. Larger test cases benefit much stronger from the use of augmented testing than smaller test cases: when comparing the distributions for `treatment=FALSE` vs `treatment=TRUE`, the distance between the two means is much bigger for `tc_big=TRUE` than `tc_big=FALSE`.
