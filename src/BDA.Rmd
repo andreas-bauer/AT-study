@@ -372,11 +372,11 @@ conditional.effect.treatment | conditional.effect.learning
 ```{r conditional-plots-export include = FALSE}
 suppressPackageStartupMessages(library(tikzDevice))
 
-tikz("figures/bda-conditional-treatment.tex", width = 6, height = 4)
+tikz("figures/bda-conditional-treatment.tex", width = 3, height = 4)
 conditional.effect.treatment
 dev.off()
 
-tikz("figures/bda-conditional-learing.tex", width = 6, height = 4)
+tikz("figures/bda-conditional-learning.tex", width = 3, height = 4)
 conditional.effect.learning
 dev.off()
 ```
