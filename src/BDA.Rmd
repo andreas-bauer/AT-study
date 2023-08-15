@@ -361,12 +361,11 @@ Conditional effects visualize the interaction between two predictor variables. I
 ```{r conditional-plots}
 conditional.effect.treatment <- plot(eff ,plot = FALSE)[[4]] + 
   theme(legend.position="bottom") +
-  labs(x="Treatment", y="Duration (scaled)")
+  labs(x="Treatment", y="Duration (scaled)", fill="Is big test case", color="Is big test case")
 
 conditional.effect.learning <- plot(eff, plot = FALSE)[[5]] + 
   theme(legend.position="bottom") +
-  labs(x="Learing effect", y="Duration (scaled)")
-
+  labs(x="Learing effect", y="Duration (scaled)", fill="AT treatment", color="AT treatment")
 
 conditional.effect.treatment | conditional.effect.learning
 ```
