@@ -16,12 +16,12 @@ Existing studies involving testing approaches under the AT definition primarily 
 As a secondary objective, we investigate AT's benefits, drawbacks, and usability issues when deployed with the demonstrator tool, Scout.
 
 **Method:**
-We conducted an experiment involving \sSubjects{} industry professionals, from six companies, comparing AT to manual GUI-based regression testing. 
+We conducted an experiment involving 13 industry professionals, from six companies, comparing AT to manual GUI-based regression testing.
 These results were complemented by interviews and Bayesian data analysis (BDA) of the study's quantitative results.
 
 **Results:**
-The results of the Bayesian data analysis revealed that the use of AT shortens test durations in 70\% of the cases on average, concluding that AT is more efficient.
-When comparing the means of the total duration to perform all tests, AT reduced the test duration by 36\% in total.
+The results of the Bayesian data analysis revealed that the use of AT shortens test durations in 70% of the cases on average, concluding that AT is more efficient.
+When comparing the means of the total duration to perform all tests, AT reduced the test duration by 36% in total.
 Participant interviews highlighted nine benefits and eleven drawbacks of AT, while observations revealed four usability issues.
 
 **Conclusion:**
