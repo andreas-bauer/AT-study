@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8328166.svg)](https://doi.org/10.5281/zenodo.8328166)
+
 # Analysis of Data on Augmented Testing for manual GUI-based Regression Testing
 
 Replication package for the study "Augmented Testing to support Manual GUI-based Regression Testing: An Empirical Study"
