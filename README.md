@@ -2,6 +2,8 @@
 
 Replication package for the study "Augmented Testing to support Manual GUI-based Regression Testing: An Empirical Study"
 
+<p align="center"><img src="conditional-effects.png"></p>
+
 ## Introduction
 
 **Context:**
