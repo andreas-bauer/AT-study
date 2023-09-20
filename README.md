@@ -43,8 +43,9 @@ In `src/main.qmd`, we performed descriptive statistics analysis of the data and 
 
 ### Bayesian Data Analysis (BDA)
 
-`src/BDA.Rmd` contains the Bayesian Data Analysis of the data.
+`src/BDA.qmd` contains the Bayesian Data Analysis of the data.
 
+- [Rendered HTML](https://andreas-bauer.github.io/AT-study/BDA.html)
 - [Source code](src/BDA.Rmd)
 
 ## Installation
