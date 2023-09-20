@@ -38,7 +38,7 @@ tc_names <- c("TC1", "TC2", "TC3", "TC4", "TC5", "TC6", "TC7", "TC8")
 
 df <- df_raw %>% mutate(
   TC_sum = TC1_seconds + TC2_seconds + TC3_seconds + TC4_seconds + TC5_seconds +
-    TC6_seconds + TC7_seconds + TC8_seconds,
+  TC6_seconds + TC7_seconds + TC8_seconds,
   Online_session = as.logical(Online_session))
 
 ```
@@ -68,15 +68,18 @@ df_only_a <- df_pivot %>%
 
 ```{r}
 time_sum_bar <- barplot(height = df$TC_sum, names = df$ID,
-        col = color_main,
-        horiz = TRUE, las = 1,
-        xlim = c(0, 1600),
-        xlab = "Sum of test case duration per participant in seconds",
-        ylab = "Paticipant ID"
-        )
+  col = color_main,
+  horiz = TRUE, las = 1,
+  xlim = c(0, 1600),
+  xlab = "Sum of test case duration per participant in seconds",
+  ylab = "Paticipant ID"
+)
+
 text(time_sum_bar,
      x = df$TC_sum - 80, paste(df$TC_sum, "sec", sep = " "),
      cex = 0.8)
+
+rec_time_sum_bar <- recordPlot()
 ```
 
 ## Violin plot per test case
@@ -84,33 +87,38 @@ text(time_sum_bar,
 data <- df %>% select(ends_with("_seconds"))
 
 vioplot(data,
-        col = color_main,
-        names = tc_names,
-        ylim = c(0, 400),
-        ylab = "Duration in seconds",
-        xlab = "Distribution of duration per test case"
-        )
+  col = color_main,
+  names = tc_names,
+  ylim = c(0, 400),
+  ylab = "Duration in seconds",
+  xlab = "Distribution of duration per test case"
+)
+
+rec_time_per_tc <- recordPlot()
 ```
 ## Violin plot per test case with seperation of the treatments
 ```{r}
 vioplot(df_only_m,
-        side = "left",
-        col = color_alt,
-        ylim = c(0, 400),
-        horiz = TRUE, las = 1,
-        xlab = "Distribution of duration per test case and treatment",
-        ylab = "Duration in seconds"
-        )
+  side = "left",
+  col = color_alt,
+  ylim = c(0, 400),
+  horiz = TRUE, las = 1,
+  xlab = "Distribution of duration per test case and treatment",
+  ylab = "Duration in seconds"
+)
+
 vioplot(df_only_a,
-        side = "right",
-        col = color_main,
-        ylim = c(0, 400),
-        horiz = TRUE, las = 1,
-        add = TRUE
-        )
+  side = "right",
+  col = color_main,
+  ylim = c(0, 400),
+  horiz = TRUE, las = 1,
+  add = TRUE
+)
+
 legend("topleft", fill = c(color_alt, color_main),
        legend = c("manual", "AT"), title = "Treatment")
 
+rec_time_per_tc_split <- recordPlot()
 ```
 
 
@@ -150,14 +158,16 @@ sprintf("Total: %i (M) and %i (A) = %i percent",
 suppressPackageStartupMessages(library(xtable))
 
 df_table <- df_mean_tc %>%
-   add_row(tc = "Total", A = total_a, M = total_m, diff_percent = total_diff_percent)
+  add_row(tc = "Total", A = total_a, M = total_m, diff_percent = total_diff_percent)
 
-print(
-  xtable(df_table, type = "latex"),
-  include.rownames = FALSE)
+print(xtable(df_table, type = "latex"), include.rownames = FALSE)
 ```
 
-## Export plots as TikZ file
+## Export recorded plots as TikZ files
+
+To create standalone tex files, you can add the `standAlone` parameter.
+
+`tikz('standAloneExample.tex', standAlone=TRUE)`
 
 ```{r}
 suppressPackageStartupMessages(library(tikzDevice))
@@ -167,58 +177,26 @@ Test execution timer per participant
 
 ```{r}
 #| output: false
-suppressPackageStartupMessages(library(tikzDevice))
 tikz("figures/time_per_subject.tex", width = 6, height = 4)
 par(mar = c(2, 4, 1, 1)) # Set the margin
-barplot(height = df$TC_sum, names = df$ID,
-        col = color_main,
-        horiz = TRUE, las = 1,
-        xlim = c(0, 1600),
-        ylab = "Paticipants"
-        )
-text(time_sum_bar, x = df$TC_sum - 80, paste(df$TC_sum, "sec", sep = " "))
+rec_time_sum_bar
 dev.off
 ```
 Violin plot of time distribution per test case
 ```{r}
 #| output: false
-tikz("figures/time_per_tc.tex", width = 6.5, height = 3)
+tikz("figures/time_per_tc.tex", width = 6.5, height = 4)
 par(mar = c(2, 4, 1, 1)) # Set the margin
-
-data <- df %>% select(ends_with("_seconds"))
-
-vioplot(data,
-        col = color_main,
-        names = tc_names,
-        ylim = c(0, 400),
-        ylab = "Duration in seconds"
-        )
-
+rec_time_per_tc
 dev.off
 ```
 
 Violin plot of time distribution per test case (both treatments)
 ```{r}
 #| output: false
-tikz("figures/time_per_tc_split.tex", width = 6.5, height = 3)
+tikz("figures/time_per_tc_split.tex", width = 6.5, height = 4)
 par(mar = c(2, 4, 1, 1)) # Set the margin
-vioplot(df_only_m,
-        side = "left",
-        col = color_alt,
-        ylim = c(0, 400),
-        horiz = TRUE, las = 1,
-        xlab = "Distribution of duration per test case and treatment",
-        ylab = "Duration in seconds"
-        )
-vioplot(df_only_a,
-        side = "right",
-        col = color_main,
-        ylim = c(0, 400),
-        horiz = TRUE, las = 1,
-        add = TRUE
-        )
-legend("topleft", fill = c(color_alt, color_main),
-       legend = c("manual", "AT"), title = "Treatment")
+rec_time_per_tc_split
 dev.off
 ```
 
