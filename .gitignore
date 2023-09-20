@@ -1,7 +1,19 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
 src/fits/
 src/figures/*
 !src/figures/.gitkeep
+src/*-tikzDictionary
+
+# Quarto files
+src/.quarto/
+
+# RStudio files
+.Rproj.user
+
+# R History files
+.Rhistory
+.Rapp.history
+
+# R Session Data files
+.RData
+.RDataTmp
+.Ruserdata
