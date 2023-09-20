@@ -5,6 +5,7 @@ all: render
 .PHONY: render
 render: ## Render qmd documents as website into the docs folder
 	quarto render src/main.qmd --to html
+	quarto render src/BDA.qmd --to html
 
 .PHONY: help
 help:
