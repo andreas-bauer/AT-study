@@ -1,5 +1,6 @@
 ---
 title: "Augmented Testing Study"
+author: "Andreas Bauer"
 execute:
   echo: true
   warning: false
