@@ -1,5 +1,5 @@
 ---
-title: "AT Study"
+title: "Augmented Testing Study"
 execute:
   echo: true
   warning: false
@@ -7,11 +7,8 @@ execute:
 
 ## Introduction
 
-TBA
-
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+This document contains a descriptive analysis of the effect of Augmented Testing on the relative duration of GUI-based testing.
+We are mainly visualizing the data as bar and violin plots.
 
 ## Load libraries
 
