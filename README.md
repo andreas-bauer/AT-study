@@ -1,3 +1,4 @@
+[![GitHub](https://img.shields.io/github/license/andreas-bauer/AT-study)](./LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8328166.svg)](https://doi.org/10.5281/zenodo.8328166)
 
 # Analysis of Data on Augmented Testing for manual GUI-based Regression Testing
