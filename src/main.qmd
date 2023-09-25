@@ -40,7 +40,9 @@ df <- df_raw %>% mutate(
   Online_session = as.logical(Online_session))
 
 ```
+
 ## Seperate two treatments
+
 ```{r}
 df_pivot <- df_raw %>%
   pivot_longer(
@@ -81,6 +83,7 @@ rec_time_sum_bar <- recordPlot()
 ```
 
 ## Violin plot per test case
+
 ```{r}
 data <- df %>% select(ends_with("_seconds"))
 
@@ -94,7 +97,9 @@ vioplot(data,
 
 rec_time_per_tc <- recordPlot()
 ```
+
 ## Violin plot per test case with seperation of the treatments
+
 ```{r}
 vioplot(df_only_m,
   side = "left",
@@ -119,7 +124,6 @@ legend("topleft", fill = c(color_alt, color_main),
 rec_time_per_tc_split <- recordPlot()
 ```
 
-
 ## Mean values per treatment
 
 ```{r}
@@ -142,7 +146,9 @@ df_mean_tc <- df_mean_tc %>%
 
 head(df_mean_tc, 8)
 ```
+
 ### Sum of mean values per treatment
+
 ```{r}
 total_a <- as.integer(sum(df_mean_tc$A))
 total_m <- as.integer(sum(df_mean_tc$M))
@@ -152,6 +158,7 @@ sprintf("Total: %i (M) and %i (A) = %i percent",
 ```
 
 ### LaTeX table export
+
 ```{r}
 suppressPackageStartupMessages(library(xtable))
 
@@ -180,7 +187,9 @@ par(mar = c(2, 4, 1, 1)) # Set the margin
 rec_time_sum_bar
 dev.off
 ```
+
 Violin plot of time distribution per test case
+
 ```{r}
 #| output: false
 tikz("figures/time_per_tc.tex", width = 6.5, height = 4)
@@ -190,6 +199,7 @@ dev.off
 ```
 
 Violin plot of time distribution per test case (both treatments)
+
 ```{r}
 #| output: false
 tikz("figures/time_per_tc_split.tex", width = 6.5, height = 4)
